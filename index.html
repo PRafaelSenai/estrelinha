@@ -3,11 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Estrelinha - Rotina Divertida</title>
+    <title>Estrelinha - Conectado</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Supabase JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     
     <style>
         body {
@@ -22,18 +24,15 @@
         @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
         @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-10px); } 100% { transform: translateY(0px); } }
         @keyframes slide-up { from { transform: translateY(100%); } to { transform: translateY(0); } }
-        
-        @keyframes heartbeat {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.2); }
-            100% { transform: scale(1); }
-        }
+        @keyframes heartbeat { 0% { transform: scale(1); } 50% { transform: scale(1.2); } 100% { transform: scale(1); } }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
         .animate-bounce-in { animation: bounce-in 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards; }
         .animate-shake { animation: shake 0.4s ease-in-out; }
         .animate-float { animation: float 3s ease-in-out infinite; }
         .animate-slide-up { animation: slide-up 0.3s ease-out forwards; }
         .animate-heartbeat { animation: heartbeat 1s infinite; }
+        .animate-spin-custom { animation: spin 1s linear infinite; }
         
         /* Temas */
         .theme-blue { --bg-primary: #eff6ff; --text-primary: #1e293b; --accent: #3b82f6; --accent-light: #dbeafe; }
@@ -47,32 +46,45 @@
             transition: background-color 0.5s, color 0.5s;
         }
         
-        .shake-trigger {
-            animation: shake 0.4s ease-in-out;
+        .shake-trigger { animation: shake 0.4s ease-in-out; }
+        
+        /* Loading Screen */
+        #loading-screen {
+            position: fixed; inset: 0; background: white; z-index: 100;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
         }
     </style>
 </head>
 <body>
 
+    <!-- Tela de Carregamento Inicial -->
+    <div id="loading-screen">
+        <div class="w-16 h-16 border-4 border-blue-200 border-t-blue-500 rounded-full animate-spin-custom mb-4"></div>
+        <h2 class="text-xl font-bold text-slate-700">Iniciando...</h2>
+        <p id="loading-text" class="text-sm text-slate-400 mt-2">Preparando Estrelinha</p>
+    </div>
+
     <!-- Container Principal -->
-    <div id="app-container" class="theme-blue w-full h-screen max-w-md mx-auto flex flex-col relative overflow-hidden sm:border-x sm:border-slate-200 shadow-2xl">
+    <div id="app-container" class="theme-blue w-full h-screen max-w-md mx-auto flex flex-col relative overflow-hidden sm:border-x sm:border-slate-200 shadow-2xl hidden">
         
         <!-- Conteúdo dinâmico -->
         <div id="main-content" class="flex-1 flex flex-col h-full overflow-hidden relative"></div>
 
-        <!-- --- MODAIS E OVERLAYS --- -->
-        
-        <!-- 1. Overlay de Ganho de Estrela -->
+        <!-- INDICADOR DE STATUS (NOVO) -->
+        <div id="status-indicator" class="absolute bottom-2 left-2 z-50 text-[10px] text-slate-400 opacity-50 flex items-center gap-1 pointer-events-none">
+            <i class="fa-solid fa-cloud"></i> Verificando...
+        </div>
+
+        <!-- OVERLAYS -->
         <div id="reward-overlay" class="hidden absolute inset-0 bg-black/60 z-50 flex items-center justify-center backdrop-blur-sm">
             <div class="bg-white p-8 rounded-3xl text-center shadow-2xl animate-bounce-in transform scale-110 w-80 border-4 border-yellow-300">
-                <i class="fa-solid fa-star text-yellow-400 text-7xl mb-4 animate-spin-slow" style="animation-duration: 3s; filter: drop-shadow(0 0 10px gold);"></i>
+                <i class="fa-solid fa-star text-yellow-400 text-7xl mb-4 animate-spin-custom" style="animation-duration: 3s; filter: drop-shadow(0 0 10px gold);"></i>
                 <h2 class="text-3xl font-bold text-slate-800 mb-2">Muito Bem!</h2>
                 <p class="text-slate-500 text-lg">+1 Estrelinha</p>
                 <button onclick="hideOverlays()" class="mt-6 bg-yellow-400 text-white font-bold py-3 px-8 rounded-full shadow-lg hover:bg-yellow-500 transition w-full text-xl">Legal!</button>
             </div>
         </div>
 
-        <!-- 2. Overlay de Perda de Estrela -->
         <div id="penalty-overlay" class="hidden absolute inset-0 bg-black/60 z-50 flex items-center justify-center backdrop-blur-sm">
             <div class="bg-white p-8 rounded-3xl text-center shadow-2xl animate-shake w-80 border-4 border-red-300">
                 <div class="relative w-20 h-20 mx-auto mb-4">
@@ -81,32 +93,28 @@
                 </div>
                 <h2 class="text-2xl font-bold text-red-500 mb-2">Poxa vida...</h2>
                 <p class="text-slate-600 font-bold text-lg mb-1">-1 Estrelinha</p>
-                <p class="text-xs text-slate-400">Tarefa não realizada.</p>
                 <button onclick="hideOverlays()" class="mt-6 bg-slate-400 text-white font-bold py-3 px-8 rounded-full shadow-lg hover:bg-slate-500 transition w-full">Vou melhorar</button>
             </div>
         </div>
 
-        <!-- 3. Overlay de INCENTIVO (Proteção emocional) -->
         <div id="encouragement-overlay" class="hidden absolute inset-0 bg-black/60 z-50 flex items-center justify-center backdrop-blur-sm">
             <div class="bg-white p-8 rounded-3xl text-center shadow-2xl animate-bounce-in w-80 border-4 border-blue-300">
                 <div class="relative w-24 h-24 mx-auto mb-4 bg-blue-100 rounded-full flex items-center justify-center">
                      <i class="fa-solid fa-hand-holding-heart text-blue-500 text-5xl"></i>
                 </div>
                 <h2 class="text-2xl font-bold text-blue-600 mb-2">Não desanime!</h2>
-                <p class="text-slate-600 text-lg mb-4">Está tudo bem recomeçar.</p>
-                <p class="text-sm text-slate-400 mb-6">Você consegue recuperar suas estrelinhas. Vamos tentar de novo?</p>
+                <p class="text-slate-600 text-lg mb-4">Vamos recomeçar.</p>
                 <button onclick="hideOverlays()" class="bg-blue-500 text-white font-bold py-3 px-8 rounded-full shadow-lg hover:bg-blue-600 transition w-full">Combinado!</button>
             </div>
         </div>
 
-        <!-- 4. Modal de Confirmação de COMPRA -->
         <div id="purchase-confirm-modal" class="hidden absolute inset-0 bg-black/60 z-50 flex items-center justify-center backdrop-blur-sm">
             <div class="bg-white w-80 rounded-3xl p-6 shadow-2xl animate-bounce-in flex flex-col items-center text-center">
                 <div class="w-20 h-20 bg-yellow-100 rounded-full flex items-center justify-center mb-4 text-yellow-500 text-4xl">
                     <i id="purchase-icon" class="fa-solid fa-gift"></i>
                 </div>
                 <h2 class="text-xl font-bold text-slate-800 mb-2">Comprar este prêmio?</h2>
-                <p id="purchase-title" class="text-lg text-slate-600 font-medium mb-1">Nome do Prêmio</p>
+                <p id="purchase-title" class="text-lg text-slate-600 font-medium mb-1">Nome</p>
                 <div class="bg-yellow-50 text-yellow-700 px-4 py-1 rounded-full font-bold text-sm mb-6 border border-yellow-200">
                     Custa <span id="purchase-cost">5</span> <i class="fa-solid fa-star text-xs"></i>
                 </div>
@@ -117,7 +125,6 @@
             </div>
         </div>
 
-        <!-- 5. Overlay de SUCESSO na Compra -->
         <div id="redeem-success-overlay" class="hidden absolute inset-0 bg-black/60 z-50 flex items-center justify-center backdrop-blur-sm">
             <div class="bg-white p-6 rounded-3xl text-center shadow-2xl animate-bounce-in w-80 border-4 border-green-400 relative overflow-hidden">
                 <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-red-400 via-yellow-400 to-blue-400"></div>
@@ -125,18 +132,16 @@
                     <i class="fa-solid fa-check text-green-500 text-5xl"></i>
                 </div>
                 <h2 class="text-2xl font-bold text-slate-800 mb-2">Comprado!</h2>
-                <p class="text-slate-500 mb-6">Mostre esta tela para um adulto.</p>
                 <button onclick="hideOverlays()" class="bg-green-500 text-white font-bold py-3 px-8 rounded-full shadow-lg hover:bg-green-600 transition w-full">Usar Agora</button>
             </div>
         </div>
 
-        <!-- 6. Toast de Erro -->
         <div id="error-toast" class="hidden absolute top-20 left-1/2 transform -translate-x-1/2 bg-red-500 text-white px-6 py-3 rounded-full shadow-xl font-bold z-50 flex items-center gap-2 whitespace-nowrap">
             <i class="fa-solid fa-circle-xmark"></i>
             <span id="error-toast-msg">Saldo insuficiente!</span>
         </div>
 
-        <!-- 7. Modal de Edição de Tarefa -->
+        <!-- Modais de Edição -->
         <div id="task-modal" class="hidden absolute inset-0 bg-black/50 z-40 flex items-end sm:items-center justify-center backdrop-blur-sm">
             <div class="bg-white w-full sm:w-11/12 sm:rounded-3xl rounded-t-3xl p-6 shadow-2xl animate-slide-up h-[85vh] sm:h-auto flex flex-col">
                 <div class="flex justify-between items-center mb-6">
@@ -144,21 +149,9 @@
                     <button onclick="closeTaskModal()" class="p-2 bg-slate-100 rounded-full text-slate-500 hover:bg-slate-200"><i class="fa-solid fa-times"></i></button>
                 </div>
                 <div class="flex-1 overflow-y-auto space-y-4 pr-2">
-                    <div>
-                        <label class="block text-sm font-bold text-slate-500 mb-1">Nome</label>
-                        <input type="text" id="edit-title" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 font-medium outline-none">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-bold text-slate-500 mb-1">Duração (min)</label>
-                        <div class="flex items-center gap-4">
-                            <input type="range" id="edit-duration-range" min="1" max="120" class="flex-1 accent-blue-500" oninput="syncDuration(this.value)">
-                            <div class="w-16 bg-slate-100 border rounded-xl p-2 text-center font-bold text-slate-700" id="edit-duration-display">30</div>
-                        </div>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-bold text-slate-500 mb-2">Ícone</label>
-                        <div class="grid grid-cols-5 gap-2" id="icon-grid"></div>
-                    </div>
+                    <div><label class="block text-sm font-bold text-slate-500 mb-1">Nome</label><input type="text" id="edit-title" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 font-medium outline-none"></div>
+                    <div><label class="block text-sm font-bold text-slate-500 mb-1">Duração (min)</label><div class="flex items-center gap-4"><input type="range" id="edit-duration-range" min="1" max="120" class="flex-1 accent-blue-500" oninput="syncDuration(this.value)"><div class="w-16 bg-slate-100 border rounded-xl p-2 text-center font-bold text-slate-700" id="edit-duration-display">30</div></div></div>
+                    <div><label class="block text-sm font-bold text-slate-500 mb-2">Ícone</label><div class="grid grid-cols-5 gap-2" id="icon-grid"></div></div>
                 </div>
                 <div class="mt-6 pt-4 border-t border-slate-100 flex gap-3">
                     <button id="btn-delete-task" onclick="deleteCurrentTask()" class="hidden px-4 py-3 bg-red-50 text-red-500 rounded-xl font-bold"><i class="fa-solid fa-trash"></i></button>
@@ -167,7 +160,6 @@
             </div>
         </div>
 
-        <!-- 8. Modal de Edição de RECOMPENSA -->
         <div id="reward-modal" class="hidden absolute inset-0 bg-black/50 z-40 flex items-end sm:items-center justify-center backdrop-blur-sm">
             <div class="bg-white w-full sm:w-11/12 sm:rounded-3xl rounded-t-3xl p-6 shadow-2xl animate-slide-up h-[85vh] sm:h-auto flex flex-col">
                 <div class="flex justify-between items-center mb-6">
@@ -175,47 +167,30 @@
                     <button onclick="closeRewardModal()" class="p-2 bg-slate-100 rounded-full text-slate-500 hover:bg-slate-200"><i class="fa-solid fa-times"></i></button>
                 </div>
                 <div class="flex-1 overflow-y-auto space-y-4 pr-2">
-                    <div>
-                        <label class="block text-sm font-bold text-slate-500 mb-1">Nome do Prêmio</label>
-                        <input type="text" id="reward-title" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 font-medium outline-none" placeholder="Ex: Escolher Filme">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-bold text-slate-500 mb-1">Preço (Estrelas)</label>
-                        <div class="flex items-center gap-4">
-                            <input type="range" id="reward-cost-range" min="1" max="50" class="flex-1 accent-yellow-400" oninput="syncCost(this.value)">
-                            <div class="w-16 bg-yellow-50 border border-yellow-200 rounded-xl p-2 text-center font-bold text-yellow-700 flex items-center justify-center gap-1">
-                                <span id="reward-cost-display">5</span> <i class="fa-solid fa-star text-xs"></i>
-                            </div>
-                        </div>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-bold text-slate-500 mb-2">Ícone</label>
-                        <div class="grid grid-cols-5 gap-2" id="reward-icon-grid"></div>
-                    </div>
+                    <div><label class="block text-sm font-bold text-slate-500 mb-1">Nome</label><input type="text" id="reward-title" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 font-medium outline-none"></div>
+                    <div><label class="block text-sm font-bold text-slate-500 mb-1">Preço</label><div class="flex items-center gap-4"><input type="range" id="reward-cost-range" min="1" max="50" class="flex-1 accent-yellow-400" oninput="syncCost(this.value)"><div class="w-16 bg-yellow-50 border border-yellow-200 rounded-xl p-2 text-center font-bold text-yellow-700"><span id="reward-cost-display">5</span></div></div></div>
+                    <div><label class="block text-sm font-bold text-slate-500 mb-2">Ícone</label><div class="grid grid-cols-5 gap-2" id="reward-icon-grid"></div></div>
                 </div>
                 <div class="mt-6 pt-4 border-t border-slate-100 flex gap-3">
                     <button id="btn-delete-reward" onclick="deleteCurrentReward()" class="hidden px-4 py-3 bg-red-50 text-red-500 rounded-xl font-bold"><i class="fa-solid fa-trash"></i></button>
-                    <button onclick="saveReward()" class="flex-1 bg-yellow-400 text-slate-900 py-3 rounded-xl font-bold shadow-lg">Salvar Prêmio</button>
+                    <button onclick="saveReward()" class="flex-1 bg-yellow-400 text-slate-900 py-3 rounded-xl font-bold shadow-lg">Salvar</button>
                 </div>
             </div>
         </div>
-
     </div>
 
     <script>
-        // --- DADOS E ESTADO ---
-        const AVAILABLE_ICONS = [
-            'fa-mug-hot', 'fa-utensils', 'fa-burger', 'fa-apple-whole', 
-            'fa-ice-cream', 'fa-candy-cane', 'fa-pizza-slice', 
-            'fa-school', 'fa-book', 'fa-pencil', 'fa-laptop', 
-            'fa-tv', 'fa-gamepad', 'fa-puzzle-piece', 'fa-music', 
-            'fa-bed', 'fa-bath', 'fa-toilet', 'fa-shirt', 
-            'fa-person-swimming', 'fa-futbol', 'fa-bicycle', 'fa-person-running',
-            'fa-user-doctor', 'fa-tooth', 'fa-brain', 'fa-pills',
-            'fa-car', 'fa-bus', 'fa-cart-shopping', 'fa-tree',
-            'fa-gift', 'fa-trophy', 'fa-ticket', 'fa-plane'
-        ];
+        // --- SUPABASE SETUP ---
+        const SUPABASE_URL = "https://bpegiwnobtdfwfbsmxkh.supabase.co";
+        // Chave pública fornecida pelo usuário.
+        const SUPABASE_KEY = "sb_publishable_Q_-dL7xSgL-7dgWZYMywdw_SPmpX8gz";
+        
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        let _user = null;
+        let _isOffline = false;
 
+        // --- CONSTANTES ---
+        const AVAILABLE_ICONS = ['fa-mug-hot', 'fa-utensils', 'fa-burger', 'fa-apple-whole', 'fa-ice-cream', 'fa-candy-cane', 'fa-pizza-slice', 'fa-school', 'fa-book', 'fa-pencil', 'fa-laptop', 'fa-tv', 'fa-gamepad', 'fa-puzzle-piece', 'fa-music', 'fa-bed', 'fa-bath', 'fa-toilet', 'fa-shirt', 'fa-person-swimming', 'fa-futbol', 'fa-bicycle', 'fa-person-running', 'fa-user-doctor', 'fa-tooth', 'fa-brain', 'fa-pills', 'fa-car', 'fa-bus', 'fa-cart-shopping', 'fa-tree', 'fa-gift', 'fa-trophy', 'fa-ticket', 'fa-plane'];
         const DEFAULT_ROUTINE = [
             { id: 1, title: 'Café da Manhã', icon: 'fa-mug-hot', duration: 15, completed: false },
             { id: 2, title: 'Escola', icon: 'fa-school', duration: 240, completed: false },
@@ -223,30 +198,166 @@
             { id: 4, title: 'Banho', icon: 'fa-bath', duration: 20, completed: false },
             { id: 5, title: 'Dormir', icon: 'fa-bed', duration: 600, completed: false },
         ];
-
         const DEFAULT_REWARDS = [
             { id: 1, title: '15min de Tablet', cost: 3, icon: 'fa-tablet-screen-button' },
             { id: 2, title: 'Escolher o Jantar', cost: 5, icon: 'fa-utensils' },
-            { id: 3, title: 'Passeio no Parque', cost: 10, icon: 'fa-tree' },
-            { id: 4, title: 'Brinquedo Pequeno', cost: 20, icon: 'fa-gift' }
+            { id: 3, title: 'Passeio no Parque', cost: 10, icon: 'fa-tree' }
         ];
 
-        let savedState = localStorage.getItem('minhaRotinaData_v8_estrelinha');
-        
-        let state = savedState ? JSON.parse(savedState) : {
-            view: 'child',
-            theme: 'theme-blue',
-            childName: '',
-            stars: 5,
-            soundEnabled: true,
-            activeTask: null,
-            currentFeeling: null,
-            routine: DEFAULT_ROUTINE,
-            rewards: DEFAULT_REWARDS
+        // Carregar estado inicial do LocalStorage para garantir que dados offline apareçam
+        let savedLocal = localStorage.getItem('minhaRotinaData_v8_estrelinha');
+        let state = savedLocal ? JSON.parse(savedLocal) : {
+            view: 'child', theme: 'theme-blue', childName: '', stars: 5, soundEnabled: true, activeTask: null, currentFeeling: null,
+            routine: DEFAULT_ROUTINE, rewards: DEFAULT_REWARDS
         };
-
+        // Fallback se rewards não existir (migração de versões antigas)
         if(!state.rewards) state.rewards = DEFAULT_REWARDS;
 
+        // --- INICIALIZAÇÃO E SYNC ---
+        
+        async function initApp() {
+            const loadingText = document.getElementById('loading-text');
+            const statusIndicator = document.getElementById('status-indicator');
+            
+            try {
+                loadingText.innerText = "Autenticando...";
+                
+                // 1. Tenta login Anônimo
+                let { data, error } = await _supabase.auth.signInAnonymously();
+
+                // 2. Se falhar, tenta login com credenciais de dispositivo (email/senha falsos)
+                if (error) {
+                    console.log("Login anônimo falhou, tentando credenciais de dispositivo...");
+                    loadingText.innerText = "Modo Dispositivo...";
+                    try {
+                        const fallbackData = await loginWithDeviceCredentials();
+                        data = fallbackData; // Sucesso no fallback
+                        error = null;
+                    } catch (fallbackErr) {
+                        console.warn("Fallback falhou (Provavelmente requer verificação de email):", fallbackErr.message);
+                        // Mantém o erro original ou o novo para cair no catch e ir para Offline
+                        throw new Error("Modo Online Indisponível"); 
+                    }
+                }
+
+                _user = _supabase.auth.getUser()?.data?.user || data?.session?.user;
+                
+                if (_user) {
+                    console.log("Logado:", _user.id);
+                    loadingText.innerText = "Sincronizando...";
+                    statusIndicator.innerHTML = '<i class="fa-solid fa-cloud text-green-400"></i> Online';
+                    await loadFromSupabase();
+                }
+
+            } catch (err) {
+                console.log("Iniciando em Modo Offline devido a erro de conexão/auth.");
+                _isOffline = true;
+                statusIndicator.innerHTML = '<i class="fa-solid fa-cloud-slash text-red-400"></i> Offline (Salvo no PC)';
+            } finally {
+                // Sempre remove a tela de loading e mostra o app
+                document.getElementById('loading-screen').style.display = 'none';
+                document.getElementById('app-container').classList.remove('hidden');
+                render();
+            }
+        }
+
+        async function loginWithDeviceCredentials() {
+            let creds = JSON.parse(localStorage.getItem('estrelinha_device_auth'));
+            
+            if (!creds) {
+                const randId = Math.random().toString(36).substring(2, 15);
+                creds = {
+                    email: `device_${randId}@estrelinha.com`, // Domínio .com para passar validação
+                    password: `pass_${Math.random().toString(36).substring(2)}_${Date.now()}`
+                };
+            }
+
+            // Tenta logar
+            let { data, error } = await _supabase.auth.signInWithPassword({
+                email: creds.email,
+                password: creds.password
+            });
+
+            // Se usuário não existe, tenta criar
+            if (error && error.message.includes("Invalid login credentials")) {
+                const { data: signUpData, error: signUpError } = await _supabase.auth.signUp({
+                    email: creds.email,
+                    password: creds.password
+                });
+                
+                if (signUpError) throw signUpError;
+                
+                // Se criou mas não tem sessão, é porque o backend pede confirmação de e-mail.
+                // Nesse caso, lançamos erro para cair no modo offline.
+                if (!signUpData.session) {
+                    throw new Error("Backend exige verificação de email.");
+                }
+
+                localStorage.setItem('estrelinha_device_auth', JSON.stringify(creds));
+                return signUpData;
+            } 
+            
+            if (error) throw error;
+            
+            // Sucesso no login
+            localStorage.setItem('estrelinha_device_auth', JSON.stringify(creds));
+            return data;
+        }
+
+        async function loadFromSupabase() {
+            if (!_user || _isOffline) return;
+            const { data, error } = await _supabase
+                .from('user_data')
+                .select('content')
+                .eq('id', _user.id)
+                .single();
+
+            if (data && data.content) {
+                state = { ...state, ...data.content };
+                if (!state.rewards) state.rewards = DEFAULT_REWARDS;
+            } else {
+                // Se não tem dados na nuvem, salva o que tem localmente
+                saveToSupabaseNow();
+            }
+        }
+
+        let saveTimeout;
+        function saveData() {
+            // Salva localmente imediatamente
+            localStorage.setItem('minhaRotinaData_v8_estrelinha', JSON.stringify(state));
+
+            if (_isOffline) return;
+
+            // Debounce para nuvem
+            const indicator = document.getElementById('status-indicator');
+            indicator.innerHTML = '<i class="fa-solid fa-cloud-arrow-up text-blue-400 animate-pulse"></i> Salvando...';
+            
+            clearTimeout(saveTimeout);
+            saveTimeout = setTimeout(async () => {
+                await saveToSupabaseNow();
+                indicator.innerHTML = '<i class="fa-solid fa-cloud text-green-400"></i> Online';
+            }, 1000);
+        }
+
+        async function saveToSupabaseNow() {
+            if (!_user || _isOffline) return;
+            const dataToSave = {
+                view: state.view === 'active-task' ? 'child' : state.view,
+                theme: state.theme, childName: state.childName, stars: state.stars, soundEnabled: state.soundEnabled,
+                currentFeeling: state.currentFeeling, routine: state.routine, rewards: state.rewards
+            };
+
+            const { error } = await _supabase
+                .from('user_data')
+                .upsert({ id: _user.id, content: dataToSave });
+
+            if (error) {
+                console.error("Erro ao salvar:", error);
+                document.getElementById('status-indicator').innerHTML = '<i class="fa-solid fa-triangle-exclamation text-yellow-500"></i> Erro Sync';
+            }
+        }
+
+        // --- VARIÁVEIS LOCAIS (UI) ---
         let timerInterval = null;
         let timeLeft = 0;
         let isPaused = false;
@@ -256,43 +367,16 @@
         let pendingPurchaseId = null;
 
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        
         function playSound(type) {
             if (!state.soundEnabled) return;
             if (audioCtx.state === 'suspended') audioCtx.resume();
-            const osc = audioCtx.createOscillator();
-            const gainNode = audioCtx.createGain();
-            osc.connect(gainNode);
-            gainNode.connect(audioCtx.destination);
-            const now = audioCtx.currentTime;
-
-            if (type === 'success') {
-                osc.type = 'sine'; osc.frequency.setValueAtTime(523.25, now); osc.frequency.linearRampToValueAtTime(783.99, now + 0.2); gainNode.gain.setValueAtTime(0.2, now); gainNode.gain.linearRampToValueAtTime(0, now + 0.4); osc.start(now); osc.stop(now + 0.4);
-            } else if (type === 'error') {
-                osc.type = 'sawtooth'; osc.frequency.setValueAtTime(150, now); osc.frequency.exponentialRampToValueAtTime(50, now + 0.3); gainNode.gain.setValueAtTime(0.3, now); gainNode.gain.linearRampToValueAtTime(0, now + 0.3); osc.start(now); osc.stop(now + 0.3);
-            } else if (type === 'click') {
-                osc.type = 'triangle'; osc.frequency.setValueAtTime(400, now); gainNode.gain.setValueAtTime(0.05, now); gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.1); osc.start(now); osc.stop(now + 0.1);
-            } else if (type === 'alarm') {
-                osc.type = 'square'; osc.frequency.setValueAtTime(440, now); gainNode.gain.setValueAtTime(0.1, now); gainNode.gain.linearRampToValueAtTime(0, now + 0.5); osc.start(now); osc.stop(now + 0.5);
-            } else if (type === 'cash') {
-                osc.type = 'sine'; osc.frequency.setValueAtTime(1200, now); osc.frequency.linearRampToValueAtTime(2000, now + 0.1); gainNode.gain.setValueAtTime(0.2, now); gainNode.gain.linearRampToValueAtTime(0, now + 0.3); osc.start(now); osc.stop(now + 0.3);
-            } else if (type === 'tick') {
-                osc.type = 'square'; osc.frequency.setValueAtTime(800, now); gainNode.gain.setValueAtTime(0.05, now); gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.05); osc.start(now); osc.stop(now + 0.05);
-            }
-        }
-
-        function saveData() {
-            const dataToSave = {
-                view: state.view === 'active-task' ? 'child' : state.view,
-                theme: state.theme,
-                childName: state.childName,
-                stars: state.stars,
-                soundEnabled: state.soundEnabled,
-                currentFeeling: state.currentFeeling,
-                routine: state.routine,
-                rewards: state.rewards
-            };
-            localStorage.setItem('minhaRotinaData_v8_estrelinha', JSON.stringify(dataToSave));
+            const osc = audioCtx.createOscillator(); const gainNode = audioCtx.createGain(); osc.connect(gainNode); gainNode.connect(audioCtx.destination); const now = audioCtx.currentTime;
+            if(type==='success'){osc.type='sine';osc.frequency.setValueAtTime(523.25,now);osc.frequency.linearRampToValueAtTime(783.99,now+0.2);gainNode.gain.setValueAtTime(0.2,now);gainNode.gain.linearRampToValueAtTime(0,now+0.4);osc.start(now);osc.stop(now+0.4);}
+            else if(type==='error'){osc.type='sawtooth';osc.frequency.setValueAtTime(150,now);osc.frequency.exponentialRampToValueAtTime(50,now+0.3);gainNode.gain.setValueAtTime(0.3,now);gainNode.gain.linearRampToValueAtTime(0,now+0.3);osc.start(now);osc.stop(now+0.3);}
+            else if(type==='click'){osc.type='triangle';osc.frequency.setValueAtTime(400,now);gainNode.gain.setValueAtTime(0.05,now);gainNode.gain.exponentialRampToValueAtTime(0.001,now+0.1);osc.start(now);osc.stop(now+0.1);}
+            else if(type==='alarm'){osc.type='square';osc.frequency.setValueAtTime(440,now);gainNode.gain.setValueAtTime(0.1,now);gainNode.gain.linearRampToValueAtTime(0,now+0.5);osc.start(now);osc.stop(now+0.5);}
+            else if(type==='cash'){osc.type='sine';osc.frequency.setValueAtTime(1200,now);osc.frequency.linearRampToValueAtTime(2000,now+0.1);gainNode.gain.setValueAtTime(0.2,now);gainNode.gain.linearRampToValueAtTime(0,now+0.3);osc.start(now);osc.stop(now+0.3);}
+            else if(type==='tick'){osc.type='square';osc.frequency.setValueAtTime(800,now);gainNode.gain.setValueAtTime(0.05,now);gainNode.gain.exponentialRampToValueAtTime(0.001,now+0.05);osc.start(now);osc.stop(now+0.05);}
         }
 
         const appContainer = document.getElementById('app-container');
@@ -311,193 +395,40 @@
             saveData();
         }
 
-        // --- VISUALIZAÇÕES PRINCIPAIS ---
+        // --- RENDER FUNCTIONS ---
         function renderChildDashboard() {
             const greeting = state.childName ? `Olá, ${state.childName}!` : 'Estrelinha';
-            let html = `<header class="flex justify-between items-center p-6 bg-white/80 backdrop-blur-md shadow-sm z-10 sticky top-0"><div onclick="changeView('store')" class="flex items-center gap-2 bg-yellow-50 px-4 py-2 rounded-full shadow-sm border border-yellow-200 cursor-pointer active:scale-95 transition hover:bg-yellow-100"><i class="fa-solid fa-star text-yellow-400 text-2xl drop-shadow-sm animate-pulse"></i><span class="text-2xl font-bold text-yellow-600">${state.stars}</span><span class="text-xs text-yellow-500 font-medium ml-1">LOJA</span></div><div class="flex gap-2"><button onclick="changeView('feelings')" class="w-10 h-10 flex items-center justify-center bg-pink-100 text-pink-500 rounded-full hover:bg-pink-200 transition shadow-sm"><i class="fa-solid fa-face-smile text-lg"></i></button><button onclick="changeView('parent')" class="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition"><i class="fa-solid fa-gear text-lg"></i></button></div></header><div class="flex-1 overflow-y-auto p-4 space-y-4 pb-24"><div class="ml-2 mb-4"><h1 class="text-2xl font-bold text-slate-800">${greeting}</h1><p class="text-slate-500 text-sm">Sua rotina divertida!</p></div>${state.currentFeeling ? `<div class="bg-white p-3 rounded-2xl shadow-sm flex items-center gap-3 mb-4 border-l-4 border-pink-300"><span class="text-2xl">${getFeelingEmoji(state.currentFeeling)}</span><span class="text-slate-600 font-medium">Estou: <strong>${state.currentFeeling}</strong></span><button onclick="clearFeeling()" class="ml-auto text-slate-300 hover:text-red-400 w-8 h-8 flex items-center justify-center rounded-full"><i class="fa-solid fa-times"></i></button></div>` : ''}${state.routine.length === 0 ? `<div class="text-center p-8 text-slate-400 border-2 border-dashed border-slate-200 rounded-3xl"><i class="fa-solid fa-clipboard-list text-4xl mb-2"></i><p>Peça para configurar sua rotina!</p></div>` : ''}${state.routine.map(task => `<div onclick="${!task.completed ? `startTask(${task.id})` : ''}" class="relative p-4 rounded-3xl flex items-center gap-5 transition-all transform duration-300 ${task.completed ? 'bg-slate-100 opacity-60 grayscale cursor-default' : 'bg-white shadow-md hover:scale-[1.02] hover:shadow-lg cursor-pointer border-l-8 border-[var(--accent)]'}"><div class="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl shrink-0 ${task.completed ? 'bg-slate-200 text-slate-400' : 'bg-[var(--accent-light)] text-[var(--accent)]'}"><i class="fa-solid ${task.icon}"></i></div><div class="flex-1 min-w-0"><h3 class="font-bold text-lg text-slate-800 truncate ${task.completed ? 'line-through' : ''}">${task.title}</h3><p class="text-slate-500 text-sm flex items-center gap-1"><i class="fa-regular fa-clock text-xs"></i> ${formatDuration(task.duration)}</p></div>${task.completed ? '<i class="fa-solid fa-circle-check text-green-500 text-3xl"></i>' : '<div class="bg-[var(--accent-light)] w-10 h-10 rounded-full flex items-center justify-center text-[var(--accent)]"><i class="fa-solid fa-play ml-1"></i></div>'}</div>`).join('')}</div>`;
-            mainContent.innerHTML = html;
+            let html = `<header class="flex justify-between items-center p-6 bg-white/80 backdrop-blur-md shadow-sm z-10 sticky top-0"><div onclick="changeView('store')" class="flex items-center gap-2 bg-yellow-50 px-4 py-2 rounded-full shadow-sm border border-yellow-200 cursor-pointer active:scale-95 transition hover:bg-yellow-100"><i class="fa-solid fa-star text-yellow-400 text-2xl drop-shadow-sm animate-pulse"></i><span class="text-2xl font-bold text-yellow-600">${state.stars}</span><span class="text-xs text-yellow-500 font-medium ml-1">LOJA</span></div><div class="flex gap-2"><button onclick="changeView('feelings')" class="w-10 h-10 flex items-center justify-center bg-pink-100 text-pink-500 rounded-full hover:bg-pink-200 transition shadow-sm"><i class="fa-solid fa-face-smile text-lg"></i></button><button onclick="changeView('parent')" class="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition"><i class="fa-solid fa-gear text-lg"></i></button></div></header><div class="flex-1 overflow-y-auto p-4 space-y-4 pb-24"><div class="ml-2 mb-4"><h1 class="text-2xl font-bold text-slate-800">${greeting}</h1><p class="text-slate-500 text-sm">Sua rotina divertida!</p></div>${state.currentFeeling ? `<div class="bg-white p-3 rounded-2xl shadow-sm flex items-center gap-3 mb-4 border-l-4 border-pink-300"><span class="text-2xl">${getFeelingEmoji(state.currentFeeling)}</span><span class="text-slate-600 font-medium">Estou: <strong>${state.currentFeeling}</strong></span><button onclick="clearFeeling()" class="ml-auto text-slate-300 hover:text-red-400 w-8 h-8 flex items-center justify-center rounded-full"><i class="fa-solid fa-times"></i></button></div>` : ''}${state.routine.length===0?`<div class="text-center p-8 text-slate-400 border-2 border-dashed border-slate-200 rounded-3xl"><i class="fa-solid fa-clipboard-list text-4xl mb-2"></i><p>Peça para configurar sua rotina!</p></div>`:''}${state.routine.map(task => `<div onclick="${!task.completed ? `startTask(${task.id})` : ''}" class="relative p-4 rounded-3xl flex items-center gap-5 transition-all transform duration-300 ${task.completed ? 'bg-slate-100 opacity-60 grayscale cursor-default' : 'bg-white shadow-md hover:scale-[1.02] hover:shadow-lg cursor-pointer border-l-8 border-[var(--accent)]'}"><div class="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl shrink-0 ${task.completed ? 'bg-slate-200 text-slate-400' : 'bg-[var(--accent-light)] text-[var(--accent)]'}"><i class="fa-solid ${task.icon}"></i></div><div class="flex-1 min-w-0"><h3 class="font-bold text-lg text-slate-800 truncate ${task.completed ? 'line-through' : ''}">${task.title}</h3><p class="text-slate-500 text-sm flex items-center gap-1"><i class="fa-regular fa-clock text-xs"></i> ${formatDuration(task.duration)}</p></div>${task.completed ? '<i class="fa-solid fa-circle-check text-green-500 text-3xl"></i>' : '<div class="bg-[var(--accent-light)] w-10 h-10 rounded-full flex items-center justify-center text-[var(--accent)]"><i class="fa-solid fa-play ml-1"></i></div>'}</div>`).join('')}</div>`; mainContent.innerHTML = html;
         }
 
         function renderRewardStore() {
-            let html = `<div class="flex flex-col h-full bg-slate-50"><header class="bg-yellow-400 p-6 shadow-md flex items-center justify-between z-10 sticky top-0"><div class="flex items-center gap-3 text-white"><button onclick="changeView('child')" class="p-2 bg-yellow-500 rounded-full hover:bg-yellow-600 transition shadow-sm"><i class="fa-solid fa-arrow-left text-lg"></i></button><h1 class="text-2xl font-bold text-slate-900">Lojinha</h1></div><div class="flex items-center gap-2 bg-slate-900/10 px-4 py-2 rounded-full border border-slate-900/10"><i class="fa-solid fa-star text-white text-xl drop-shadow-sm"></i><span class="text-2xl font-bold text-slate-900">${state.stars}</span></div></header><div class="flex-1 overflow-y-auto p-4 pb-20"><div class="bg-yellow-100 p-4 rounded-2xl border border-yellow-200 mb-6 flex items-start gap-3"><i class="fa-solid fa-circle-info text-yellow-600 mt-1"></i><p class="text-yellow-800 text-sm">Toque nos prêmios para comprar!</p></div>${state.rewards.length === 0 ? `<div class="text-center p-8 text-slate-400"><i class="fa-solid fa-store-slash text-4xl mb-2"></i><p>A loja está vazia.</p></div>` : ''}<div class="grid grid-cols-2 gap-4">${state.rewards.map(reward => { const canAfford = state.stars >= reward.cost; return `<div id="reward-card-${reward.id}" onclick="tryBuyReward(${reward.id})" class="relative bg-white p-4 rounded-3xl shadow-sm flex flex-col items-center gap-3 text-center transition-all duration-200 active:scale-95 cursor-pointer ${canAfford ? 'border-2 border-transparent hover:border-green-400 hover:shadow-lg' : 'opacity-70 grayscale border-2 border-transparent'}"><div class="w-14 h-14 rounded-full ${canAfford ? 'bg-indigo-100 text-indigo-500' : 'bg-slate-100 text-slate-400'} flex items-center justify-center text-2xl mb-1"><i class="fa-solid ${reward.icon}"></i></div><h3 class="font-bold text-slate-700 leading-tight text-sm h-10 flex items-center justify-center overflow-hidden line-clamp-2">${reward.title}</h3><div class="px-4 py-1 rounded-full text-sm font-bold flex items-center gap-1 ${canAfford ? 'bg-yellow-100 text-yellow-700' : 'bg-slate-100 text-slate-500'}"><span>${reward.cost}</span> <i class="fa-solid fa-star text-xs"></i></div></div>`; }).join('')}</div></div></div>`;
-            mainContent.innerHTML = html;
+            let html = `<div class="flex flex-col h-full bg-slate-50"><header class="bg-yellow-400 p-6 shadow-md flex items-center justify-between z-10 sticky top-0"><div class="flex items-center gap-3 text-white"><button onclick="changeView('child')" class="p-2 bg-yellow-500 rounded-full hover:bg-yellow-600 transition shadow-sm"><i class="fa-solid fa-arrow-left text-lg"></i></button><h1 class="text-2xl font-bold text-slate-900">Lojinha</h1></div><div class="flex items-center gap-2 bg-slate-900/10 px-4 py-2 rounded-full border border-slate-900/10"><i class="fa-solid fa-star text-white text-xl drop-shadow-sm"></i><span class="text-2xl font-bold text-slate-900">${state.stars}</span></div></header><div class="flex-1 overflow-y-auto p-4 pb-20"><div class="bg-yellow-100 p-4 rounded-2xl border border-yellow-200 mb-6 flex items-start gap-3"><i class="fa-solid fa-circle-info text-yellow-600 mt-1"></i><p class="text-yellow-800 text-sm">Toque nos prêmios para comprar!</p></div>${state.rewards.length === 0 ? `<div class="text-center p-8 text-slate-400"><i class="fa-solid fa-store-slash text-4xl mb-2"></i><p>A loja está vazia.</p></div>` : ''}<div class="grid grid-cols-2 gap-4">${state.rewards.map(reward => { const canAfford = state.stars >= reward.cost; return `<div id="reward-card-${reward.id}" onclick="tryBuyReward(${reward.id})" class="relative bg-white p-4 rounded-3xl shadow-sm flex flex-col items-center gap-3 text-center transition-all duration-200 active:scale-95 cursor-pointer ${canAfford ? 'border-2 border-transparent hover:border-green-400 hover:shadow-lg' : 'opacity-70 grayscale border-2 border-transparent'}"><div class="w-14 h-14 rounded-full ${canAfford ? 'bg-indigo-100 text-indigo-500' : 'bg-slate-100 text-slate-400'} flex items-center justify-center text-2xl mb-1"><i class="fa-solid ${reward.icon}"></i></div><h3 class="font-bold text-slate-700 leading-tight text-sm h-10 flex items-center justify-center overflow-hidden line-clamp-2">${reward.title}</h3><div class="px-4 py-1 rounded-full text-sm font-bold flex items-center gap-1 ${canAfford ? 'bg-yellow-100 text-yellow-700' : 'bg-slate-100 text-slate-500'}"><span>${reward.cost}</span> <i class="fa-solid fa-star text-xs"></i></div></div>`; }).join('')}</div></div></div>`; mainContent.innerHTML = html;
         }
 
-        // --- TIMER ATIVO COM CONTAGEM REGRESSIVA VISUAL ---
         function renderActiveTask() {
             if (!state.activeTask) { changeView('child'); return; }
-            const totalSeconds = state.activeTask.duration * 60;
-            const percentage = (timeLeft / totalSeconds) * 100;
-            const isFinished = timeLeft <= 0;
-            const isCountdown = timeLeft <= 10 && timeLeft > 0;
-            
-            let progressColor = 'bg-green-500';
-            if (percentage < 50) progressColor = 'bg-yellow-400';
-            if (percentage < 20) progressColor = 'bg-red-500';
-
-            // Estilos dinâmicos para contagem regressiva
-            const timerContainerClass = isCountdown 
-                ? 'text-red-400 animate-heartbeat scale-110 transition-transform duration-200' 
-                : 'text-white transition-colors duration-500';
-
-            let html = `
-                <div class="flex flex-col h-full bg-slate-900 text-white p-6 relative">
-                    <div class="flex justify-between items-center mb-6">
-                        <button onclick="changeView('child')" class="w-10 h-10 flex items-center justify-center bg-white/10 rounded-full hover:bg-white/20 backdrop-blur-md">
-                            <i class="fa-solid fa-chevron-down text-lg"></i>
-                        </button>
-                        <span class="text-white/60 font-medium tracking-widest text-sm uppercase">Em Atividade</span>
-                        <div class="w-10"></div>
-                    </div>
-
-                    <div class="flex-1 flex flex-col items-center justify-center z-10">
-                        <div class="relative mb-8">
-                            <div class="w-48 h-48 rounded-full flex items-center justify-center border-8 border-white/10 bg-white/5 relative z-10 animate-float">
-                                <i class="fa-solid ${state.activeTask.icon} text-7xl text-white drop-shadow-lg"></i>
-                            </div>
-                            ${percentage < 20 && !isFinished ? '<div class="absolute inset-0 bg-red-500 rounded-full opacity-30 animate-ping"></div>' : ''}
-                        </div>
-
-                        <h2 class="text-3xl font-bold mb-2 text-center px-4">${state.activeTask.title}</h2>
-                        
-                        <div class="text-6xl font-mono font-bold mb-8 tabular-nums tracking-tighter ${timerContainerClass}">
-                            ${formatTime(timeLeft)}
-                        </div>
-
-                        ${isCountdown ? `<div class="text-red-400 font-bold mb-4 animate-pulse">QUASE ACABANDO!</div>` : ''}
-
-                        <div class="w-full h-6 bg-black/30 rounded-full overflow-hidden mb-10 border border-white/10">
-                            <div class="h-full transition-all duration-1000 ease-linear ${progressColor}" style="width: ${percentage}%"></div>
-                        </div>
-
-                        ${!isFinished ? `
-                            <div class="flex flex-col gap-4 w-full px-8">
-                                <div class="flex justify-center gap-6">
-                                    <button onclick="togglePause()" class="w-16 h-16 bg-white/10 rounded-full flex items-center justify-center hover:bg-white/20 transition backdrop-blur-md border border-white/10 active:scale-95">
-                                        <i class="fa-solid ${isPaused ? 'fa-play pl-1' : 'fa-pause'} text-2xl"></i>
-                                    </button>
-                                    <button onclick="finishTask(true)" class="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center hover:bg-green-600 transition shadow-lg shadow-green-500/40 transform hover:scale-110 active:scale-95">
-                                        <i class="fa-solid fa-check text-2xl"></i>
-                                    </button>
-                                </div>
-                            </div>
-                        ` : `
-                            <div class="text-center w-full px-4">
-                                <p class="text-2xl mb-6 text-yellow-300 font-bold drop-shadow-md animate-bounce">Tempo Esgotado!</p>
-                                <div class="flex flex-col gap-4 items-center">
-                                    <button onclick="finishTask(true)" class="w-full bg-yellow-400 text-slate-900 px-6 py-4 rounded-2xl font-bold text-xl shadow-xl hover:bg-yellow-300 transform transition hover:scale-105 active:scale-95 border-b-4 border-yellow-600">
-                                        Pegar Estrelinha <i class="fa-solid fa-star ml-2"></i>
-                                    </button>
-                                    
-                                    <button onclick="failTask(true)" class="w-full bg-red-900/50 text-red-200 border border-red-500/30 px-6 py-3 rounded-xl font-medium text-sm hover:bg-red-900/80 transition">
-                                        Não realizei a tarefa (-1 Estrela)
-                                    </button>
-                                </div>
-                            </div>
-                        `}
-                    </div>
-                </div>
-            `;
-            mainContent.innerHTML = html;
+            const totalSeconds = state.activeTask.duration * 60; const percentage = (timeLeft / totalSeconds) * 100; const isFinished = timeLeft <= 0; const isCountdown = timeLeft <= 10 && timeLeft > 0;
+            let progressColor = 'bg-green-500'; if (percentage < 50) progressColor = 'bg-yellow-400'; if (percentage < 20) progressColor = 'bg-red-500';
+            const timerContainerClass = isCountdown ? 'text-red-400 animate-heartbeat scale-110 transition-transform duration-200' : 'text-white transition-colors duration-500';
+            let html = `<div class="flex flex-col h-full bg-slate-900 text-white p-6 relative"><div class="flex justify-between items-center mb-6"><button onclick="changeView('child')" class="w-10 h-10 flex items-center justify-center bg-white/10 rounded-full hover:bg-white/20 backdrop-blur-md"><i class="fa-solid fa-chevron-down text-lg"></i></button><span class="text-white/60 font-medium tracking-widest text-sm uppercase">Em Atividade</span><div class="w-10"></div></div><div class="flex-1 flex flex-col items-center justify-center z-10"><div class="relative mb-8"><div class="w-48 h-48 rounded-full flex items-center justify-center border-8 border-white/10 bg-white/5 relative z-10 animate-float"><i class="fa-solid ${state.activeTask.icon} text-7xl text-white drop-shadow-lg"></i></div>${percentage < 20 && !isFinished ? '<div class="absolute inset-0 bg-red-500 rounded-full opacity-30 animate-ping"></div>' : ''}</div><h2 class="text-3xl font-bold mb-2 text-center px-4">${state.activeTask.title}</h2><div class="text-6xl font-mono font-bold mb-8 tabular-nums tracking-tighter ${timerContainerClass}">${formatTime(timeLeft)}</div>${isCountdown ? `<div class="text-red-400 font-bold mb-4 animate-pulse">QUASE ACABANDO!</div>` : ''}<div class="w-full h-6 bg-black/30 rounded-full overflow-hidden mb-10 border border-white/10"><div class="h-full transition-all duration-1000 ease-linear ${progressColor}" style="width: ${percentage}%"></div></div>${!isFinished ? `<div class="flex flex-col gap-4 w-full px-8"><div class="flex justify-center gap-6"><button onclick="togglePause()" class="w-16 h-16 bg-white/10 rounded-full flex items-center justify-center hover:bg-white/20 transition backdrop-blur-md border border-white/10 active:scale-95"><i class="fa-solid ${isPaused ? 'fa-play pl-1' : 'fa-pause'} text-2xl"></i></button><button onclick="finishTask(true)" class="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center hover:bg-green-600 transition shadow-lg shadow-green-500/40 transform hover:scale-110 active:scale-95"><i class="fa-solid fa-check text-2xl"></i></button></div></div>` : `<div class="text-center w-full px-4"><p class="text-2xl mb-6 text-yellow-300 font-bold drop-shadow-md animate-bounce">Tempo Esgotado!</p><div class="flex flex-col gap-4 items-center"><button onclick="finishTask(true)" class="w-full bg-yellow-400 text-slate-900 px-6 py-4 rounded-2xl font-bold text-xl shadow-xl hover:bg-yellow-300 transform transition hover:scale-105 active:scale-95 border-b-4 border-yellow-600">Pegar Estrelinha <i class="fa-solid fa-star ml-2"></i></button><button onclick="failTask(true)" class="w-full bg-red-900/50 text-red-200 border border-red-500/30 px-6 py-3 rounded-xl font-medium text-sm hover:bg-red-900/80 transition">Não realizei a tarefa (-1 Estrela)</button></div></div>`}</div></div>`; mainContent.innerHTML = html;
         }
 
-        // --- LÓGICA DE TASK ATUALIZADA ---
-        function startTask(id) {
-            const task = state.routine.find(t => t.id === id);
-            if (!task) return;
-            playSound('click');
-            state.activeTask = task;
-            timeLeft = task.duration * 60;
-            // Para testar a contagem regressiva, descomente a linha abaixo:
-            // timeLeft = 15; 
-            isPaused = false;
-            state.view = 'active-task';
-            if (timerInterval) clearInterval(timerInterval);
-            timerInterval = setInterval(() => {
-                if (!isPaused && timeLeft > 0) {
-                    timeLeft--;
-                    // Som de tick nos ultimos 10 segundos
-                    if (timeLeft <= 10) playSound('tick');
-                    renderActiveTask();
-                } else if (timeLeft === 0) {
-                    clearInterval(timerInterval);
-                    playSound('alarm');
-                    renderActiveTask();
-                }
-            }, 1000);
-            render();
-        }
-
-        // --- LÓGICA DE FALHA COM PROTEÇÃO EMOCIONAL ---
-        function failTask(applyPenalty = false) {
-            if (timerInterval) clearInterval(timerInterval);
-            
-            // Marca como completado (processado)
-            const taskIndex = state.routine.findIndex(t => t.id === state.activeTask.id);
-            if (taskIndex !== -1) state.routine[taskIndex].completed = true;
-
-            state.activeTask = null;
-            state.view = 'child';
-
-            if (applyPenalty) {
-                if (state.stars === 1) {
-                    // CASO ESPECIAL: Vai zerar as estrelas
-                    state.stars = 0;
-                    render();
-                    playSound('success'); // Som positivo para não frustrar
-                    document.getElementById('encouragement-overlay').classList.remove('hidden');
-                } else if (state.stars > 1) {
-                    // Penalidade normal
-                    state.stars--;
-                    render();
-                    playSound('error');
-                    document.getElementById('penalty-overlay').classList.remove('hidden');
-                } else {
-                    // Já estava com 0
-                    render();
-                    document.getElementById('penalty-overlay').classList.remove('hidden');
-                }
-            } else {
-                render();
-            }
-        }
-
-        function manualAdjustStars(amt) {
-            if (amt < 0) {
-                if (state.stars === 1) {
-                    // Proteção emocional também no ajuste manual?
-                    // Pode ser confuso para o pai, então manteremos comportamento padrão no painel pai,
-                    // ou podemos aplicar a mesma lógica. Vamos manter o padrão simples no painel pai.
-                    state.stars = 0;
-                    render();
-                    playSound('error');
-                    return;
-                }
-                if (state.stars <= 0) return;
-            }
-            state.stars += amt;
-            render();
-            amt > 0 ? playSound('success') : playSound('error');
-        }
-
-        // ... (Funções de Loja e outras mantidas) ...
-        function tryBuyReward(id) {
-            const reward = state.rewards.find(r => r.id === id); if (!reward) return; playSound('click');
-            if (state.stars >= reward.cost) { pendingPurchaseId = id; document.getElementById('purchase-icon').className = `fa-solid ${reward.icon}`; document.getElementById('purchase-title').innerText = reward.title; document.getElementById('purchase-cost').innerText = reward.cost; document.getElementById('purchase-confirm-modal').classList.remove('hidden'); } 
-            else { const card = document.getElementById(`reward-card-${id}`); if(card) { card.classList.remove('shake-trigger'); void card.offsetWidth; card.classList.add('shake-trigger'); } showErrorToast(`Faltam ${reward.cost - state.stars} estrelas!`); playSound('error'); }
-        }
-        function confirmPurchase() { if (!pendingPurchaseId) return; const reward = state.rewards.find(r => r.id === pendingPurchaseId); if (reward && state.stars >= reward.cost) { state.stars -= reward.cost; playSound('cash'); saveData(); closePurchaseModal(); render(); document.getElementById('redeem-success-overlay').classList.remove('hidden'); } }
-        function closePurchaseModal() { document.getElementById('purchase-confirm-modal').classList.add('hidden'); pendingPurchaseId = null; }
-        function showErrorToast(msg) { const toast = document.getElementById('error-toast'); document.getElementById('error-toast-msg').innerText = msg; toast.classList.remove('hidden'); toast.classList.add('animate-bounce-in'); setTimeout(() => { toast.classList.add('hidden'); }, 2000); }
         function renderParentDashboard(){let html=`<div class="flex flex-col h-full bg-slate-50"><header class="bg-white p-4 shadow-sm flex items-center gap-3 border-b border-slate-100 sticky top-0 z-20"><button onclick="changeView('child')" class="p-2 hover:bg-slate-100 rounded-full text-slate-500 transition"><i class="fa-solid fa-arrow-left text-xl"></i></button><h1 class="text-xl font-bold text-slate-800">Área dos Pais</h1></header><div class="flex-1 overflow-y-auto p-5 space-y-8"><section class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200"><h2 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4 text-center">Gestão de Comportamento</h2><div class="flex items-center justify-between gap-4"><button onclick="manualAdjustStars(-1)" class="w-16 h-16 rounded-2xl bg-red-50 text-red-500 border border-red-100 flex items-center justify-center text-3xl shadow-sm active:scale-95 transition hover:bg-red-100"><i class="fa-solid fa-minus"></i></button><div class="flex flex-col items-center"><div class="text-5xl font-bold text-yellow-500 flex items-center gap-2">${state.stars} <i class="fa-solid fa-star text-3xl"></i></div><span class="text-xs text-slate-400 mt-1">Saldo Atual</span></div><button onclick="manualAdjustStars(1)" class="w-16 h-16 rounded-2xl bg-green-50 text-green-500 border border-green-100 flex items-center justify-center text-3xl shadow-sm active:scale-95 transition hover:bg-green-100"><i class="fa-solid fa-plus"></i></button></div></section><section><label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 ml-1">Criança</label><div class="bg-white p-2 rounded-xl shadow-sm border border-slate-200"><input type="text" value="${state.childName}" oninput="updateChildName(this.value)" placeholder="Nome da Criança" class="w-full bg-transparent p-2 outline-none text-slate-700 font-bold"></div></section><section><h2 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 ml-1">Tema</h2><div class="grid grid-cols-4 gap-2">${renderThemeButton('theme-blue', 'bg-blue-500')}${renderThemeButton('theme-green', 'bg-green-500')}${renderThemeButton('theme-purple', 'bg-purple-500')}${renderThemeButton('theme-dark', 'bg-slate-800')}</div></section><section><div class="flex justify-between items-end mb-3 ml-1"><h2 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Rotina Diária</h2><button onclick="resetDay()" class="text-xs text-red-400 hover:text-red-600 font-medium">Resetar Dia</button></div><div class="bg-white rounded-2xl shadow-sm border border-slate-200 divide-y divide-slate-100">${state.routine.map(task => `<div class="p-4 flex items-center gap-3 hover:bg-slate-50 transition"><div class="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center text-slate-500"><i class="fa-solid ${task.icon}"></i></div><div class="flex-1 min-w-0"><div class="font-bold text-slate-700 truncate">${task.title}</div><div class="text-xs text-slate-400">${task.duration} min</div></div><button onclick="openTaskModal(${task.id})" class="p-2 text-blue-400 hover:bg-blue-50 rounded-lg"><i class="fa-solid fa-pen"></i></button></div>`).join('')}<button onclick="openTaskModal()" class="w-full p-4 text-center text-blue-500 font-bold hover:bg-blue-50 transition rounded-b-2xl"><i class="fa-solid fa-plus-circle"></i> Adicionar</button></div></section><section><div class="flex justify-between items-end mb-3 ml-1"><h2 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Loja de Recompensas</h2></div><div class="bg-white rounded-2xl shadow-sm border border-slate-200 divide-y divide-slate-100">${state.rewards.map(reward => `<div class="p-4 flex items-center gap-3 hover:bg-slate-50 transition"><div class="w-10 h-10 rounded-lg bg-yellow-50 flex items-center justify-center text-yellow-600"><i class="fa-solid ${reward.icon}"></i></div><div class="flex-1 min-w-0"><div class="font-bold text-slate-700 truncate">${reward.title}</div><div class="text-xs text-yellow-600 font-bold flex items-center gap-1">${reward.cost} <i class="fa-solid fa-star text-[10px]"></i></div></div><button onclick="openRewardModal(${reward.id})" class="p-2 text-blue-400 hover:bg-blue-50 rounded-lg"><i class="fa-solid fa-pen"></i></button></div>`).join('')}<button onclick="openRewardModal()" class="w-full p-4 text-center text-yellow-600 font-bold hover:bg-yellow-50 transition rounded-b-2xl"><i class="fa-solid fa-plus-circle"></i> Adicionar Prêmio</button></div></section></div></div>`; mainContent.innerHTML=html;}
         function renderThemeButton(t, c) { return `<button onclick="setTheme('${t}')" class="h-12 rounded-xl border-2 ${state.theme===t ? 'border-slate-800 scale-95':'border-transparent'} ${c} shadow-sm transition-transform"></button>`; }
         function renderFeelingsCheckin() { const feelings = [{id:'Feliz',icon:'fa-face-laugh-beam',color:'text-green-500',bg:'bg-green-100'},{id:'Tranquilo',icon:'fa-face-smile',color:'text-blue-500',bg:'bg-blue-100'},{id:'Cansado',icon:'fa-face-tired',color:'text-purple-500',bg:'bg-purple-100'},{id:'Bravo',icon:'fa-face-angry',color:'text-red-500',bg:'bg-red-100'},{id:'Triste',icon:'fa-face-sad-tear',color:'text-blue-300',bg:'bg-blue-50'}]; let html = `<div class="flex flex-col h-full bg-white p-6 relative"><button onclick="changeView('child')" class="absolute top-6 left-6 w-10 h-10 flex items-center justify-center bg-slate-100 rounded-full hover:bg-slate-200 transition"><i class="fa-solid fa-arrow-left text-slate-600"></i></button><div class="flex-1 flex flex-col items-center justify-center pt-10"><h2 class="text-2xl font-bold text-slate-700 mb-8 text-center">Como você está?</h2><div class="grid grid-cols-2 gap-4 w-full">${feelings.map(f => `<button onclick="selectFeeling('${f.id}')" class="p-4 rounded-2xl ${f.bg} flex flex-col items-center gap-3 transition transform hover:scale-105 active:scale-95"><i class="fa-solid ${f.icon} text-4xl ${f.color}"></i><span class="font-bold text-slate-700">${f.id}</span></button>`).join('')}</div></div></div>`; mainContent.innerHTML = html; }
-        
+
+        // --- AÇÕES ---
         function changeView(v) { playSound('click'); state.view = v; render(); }
         function updateChildName(n) { state.childName = n; saveData(); }
         function togglePause() { playSound('click'); isPaused = !isPaused; render(); }
         function finishTask(success) { if (timerInterval) clearInterval(timerInterval); const taskIndex = state.routine.findIndex(t => t.id === state.activeTask.id); if (taskIndex !== -1) state.routine[taskIndex].completed = true; state.activeTask = null; state.view = 'child'; if (success) { state.stars++; render(); playSound('success'); document.getElementById('reward-overlay').classList.remove('hidden'); } else { render(); } }
+        function failTask(applyPenalty = false) { if (timerInterval) clearInterval(timerInterval); const taskIndex = state.routine.findIndex(t => t.id === state.activeTask.id); if (taskIndex !== -1) state.routine[taskIndex].completed = true; state.activeTask = null; state.view = 'child'; if (applyPenalty) { if (state.stars === 1) { state.stars = 0; render(); playSound('success'); document.getElementById('encouragement-overlay').classList.remove('hidden'); } else if (state.stars > 1) { state.stars--; render(); playSound('error'); document.getElementById('penalty-overlay').classList.remove('hidden'); } else { render(); document.getElementById('penalty-overlay').classList.remove('hidden'); } } else { render(); } }
+        function manualAdjustStars(amt) { if (amt < 0) { if (state.stars <= 0) return; } state.stars += amt; render(); amt > 0 ? playSound('success') : playSound('error'); }
         function hideOverlays() { document.querySelectorAll('[id$="-overlay"]').forEach(el => el.classList.add('hidden')); }
+        function tryBuyReward(id) { const reward = state.rewards.find(r => r.id === id); if (!reward) return; playSound('click'); if (state.stars >= reward.cost) { pendingPurchaseId = id; document.getElementById('purchase-icon').className = `fa-solid ${reward.icon}`; document.getElementById('purchase-title').innerText = reward.title; document.getElementById('purchase-cost').innerText = reward.cost; document.getElementById('purchase-confirm-modal').classList.remove('hidden'); } else { const card = document.getElementById(`reward-card-${id}`); if(card) { card.classList.remove('shake-trigger'); void card.offsetWidth; card.classList.add('shake-trigger'); } showErrorToast(`Faltam ${reward.cost - state.stars} estrelas!`); playSound('error'); } }
+        function confirmPurchase() { if (!pendingPurchaseId) return; const reward = state.rewards.find(r => r.id === pendingPurchaseId); if (reward && state.stars >= reward.cost) { state.stars -= reward.cost; playSound('cash'); saveData(); closePurchaseModal(); render(); document.getElementById('redeem-success-overlay').classList.remove('hidden'); } }
+        function closePurchaseModal() { document.getElementById('purchase-confirm-modal').classList.add('hidden'); pendingPurchaseId = null; }
+        function showErrorToast(msg) { const toast = document.getElementById('error-toast'); document.getElementById('error-toast-msg').innerText = msg; toast.classList.remove('hidden'); toast.classList.add('animate-bounce-in'); setTimeout(() => { toast.classList.add('hidden'); }, 2000); }
         function openTaskModal(tid=null){playSound('click');editingTaskId=tid;const modal=document.getElementById('task-modal');const delBtn=document.getElementById('btn-delete-task');document.getElementById('icon-grid').innerHTML=AVAILABLE_ICONS.map(i=>`<div onclick="selectIcon('${i}')" class="icon-option w-10 h-10 rounded-lg flex items-center justify-center text-slate-500 cursor-pointer hover:bg-blue-100 border border-transparent"><i class="fa-solid ${i} text-lg"></i></div>`).join('');if(tid){const t=state.routine.find(x=>x.id===tid);document.getElementById('modal-title').innerText="Editar";document.getElementById('edit-title').value=t.title;document.getElementById('edit-duration-range').value=t.duration;document.getElementById('edit-duration-display').innerText=t.duration;selectedIcon=t.icon;delBtn.classList.remove('hidden');}else{document.getElementById('modal-title').innerText="Nova";document.getElementById('edit-title').value='';document.getElementById('edit-duration-range').value=30;document.getElementById('edit-duration-display').innerText=30;selectedIcon='fa-star';delBtn.classList.add('hidden');}highlightSelectedIcon();modal.classList.remove('hidden');}
         function closeTaskModal(){document.getElementById('task-modal').classList.add('hidden');}
         function syncDuration(v){document.getElementById('edit-duration-display').innerText=v;}
@@ -520,7 +451,10 @@
         function formatTime(s){const m=Math.floor(s/60),sec=s%60;return `${m}:${sec<10?'0':''}${sec}`;}
         function formatDuration(m){return m>=60?`${Math.floor(m/60)}h${m%60>0?` ${m%60}m`:''}`:`${m} min`;}
 
-        window.onload = function() { render(); };
+        window.onload = function() { 
+            // Inicia o fluxo de conexão Supabase
+            initApp(); 
+        };
     </script>
 </body>
 </html>
