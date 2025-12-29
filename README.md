@@ -1,1 +1,103 @@
-Estrelinha 🌟Minha Rotina Divertida - Um aplicativo visual para apoiar crianças no desenvolvimento de autonomia e organização.O Estrelinha é um aplicativo web (SPA - Single Page Application) projetado para ajudar crianças, especialmente aquelas no espectro autista ou com TDAH, a visualizar, seguir e completar sua rotina diária de forma lúdica e estruturada.✨ Funcionalidades Principais1. Rotina Visual InterativaLista Clara: As atividades do dia aparecem com ícones grandes e cores amigáveis.Foco na Atividade: Ao iniciar uma tarefa, entra-se no "Modo Foco", que mostra apenas o que deve ser feito agora, reduzindo distrações.2. Temporizador e AntecipaçãoBarra de Tempo: Uma barra visual mostra quanto tempo falta.Contagem Regressiva: Quando faltam 10 segundos, o cronômetro pulsa e fica vermelho, ajudando na transição entre atividades.Avisos Sonoros: Sons suaves indicam o início, o fim e a passagem do tempo.3. Economia de Estrelas (Reforço Positivo)Ganhar Estrelas: Ao completar uma tarefa, a criança ganha uma estrela com uma animação de celebração.Loja de Recompensas: As estrelas acumuladas podem ser trocadas por prêmios configurados pelos pais (ex: "Tempo de Tablet", "Escolher o Jantar").Proteção Emocional: Se a criança perder todas as estrelas, o app oferece uma mensagem de incentivo ("Não desanime!") ao invés de punição, incentivando a tentar de novo.4. Check-in EmocionalA criança pode registrar como está se sentindo (Feliz, Cansado, Bravo, etc.) a qualquer momento. Isso ajuda os pais a entenderem o estado emocional antes de iniciar tarefas difíceis.5. Área dos Pais (Controle Total)Personalização: Defina o nome da criança para aparecer na tela inicial.Editor de Rotina: Adicione, edite, remova e reordene as atividades do dia.Editor da Loja: Crie prêmios personalizados e defina quantos estrelas eles custam.Gestão de Comportamento: Adicione ou remova estrelas manualmente para reforçar comportamentos fora da rotina.Temas: Escolha entre temas de cores (Azul, Verde, Roxo, Escuro).🚀 Como UsarInstalaçãoNão é necessária instalação complexa! O aplicativo é um arquivo HTML único e autossuficiente.Baixe o arquivo index.html.Abra o arquivo em qualquer navegador moderno (Chrome, Firefox, Safari, Edge) no computador, tablet ou celular.Configuração Inicial (Para Pais)Abra o app.Clique no ícone de engrenagem ⚙️ no canto superior direito.Nome: Digite o nome da criança.Rotina: Edite a rotina padrão para coincidir com o dia a dia da criança. Clique no lápis para editar ou no botão "Adicionar".Loja: Configure os prêmios que motivam seu filho.No Dia a Dia (Para Crianças)Toque no botão "Play" ▶️ de uma atividade para começar.Observe o tempo passar.Quando acabar, toque no botão amarelo "Pegar Estrelinha" ⭐.Junte estrelas e toque no saldo no topo da tela para abrir a Lojinha e comprar prêmios!🛠️ Tecnologias UtilizadasHTML5: Estrutura semântica.JavaScript (Vanilla ES6+): Lógica da aplicação, gerenciamento de estado e persistência de dados (LocalStorage).Tailwind CSS (via CDN): Estilização responsiva e moderna.FontAwesome (via CDN): Ícones visuais.💾 Salvamento de DadosTodos os dados (nome, estrelas, rotina, prêmios) são salvos automaticamente no Navegador do dispositivo (LocalStorage). Isso significa que:Você pode fechar a aba e abrir depois que tudo estará lá.Atenção: Se limpar o cache do navegador ou abrir em modo anônimo, os dados serão resetados.🎨 PersonalizaçãoO app já vem com 4 temas visuais embutidos:Azul (Padrão): Calmo e focado.Verde (Floresta): Relaxante e natural.Roxo (Espaço): Criativo e lúdico.Escuro (Noturno): Alto contraste, bom para ambientes com pouca luz.Desenvolvido com carinho para auxiliar no desenvolvimento infantil. 💙
+🌟 Estrelinha – Minha Rotina Divertida
+
+Estrelinha é um aplicativo visual e lúdico criado para ajudar crianças a desenvolver autonomia, organização e autorregulação emocional, especialmente crianças no espectro autista (TEA) ou com TDAH.
+
+Ele transforma a rotina diária em algo previsível, acolhedor e motivador, reduzindo conflitos e crises durante as transições.
+
+✨ Funcionalidades Principais
+🧩 1. Rotina Visual Interativa
+
+Lista clara de atividades com ícones grandes e cores amigáveis.
+
+Modo Foco: ao iniciar uma tarefa, apenas a atividade atual aparece na tela, reduzindo distrações e ansiedade.
+
+⏱️ 2. Temporizador e Antecipação
+
+Barra de tempo visual mostrando quanto falta para terminar.
+
+Contagem regressiva final: nos últimos segundos, o tempo pulsa e muda de cor, ajudando a criança a se preparar para a transição.
+
+Avisos sonoros suaves indicam início, progresso e fim da atividade.
+
+⭐ 3. Economia de Estrelas (Reforço Positivo)
+
+Ganhar estrelas ao concluir tarefas, com animação de celebração.
+
+Loja de recompensas: estrelas podem ser trocadas por prêmios definidos pelos pais (ex.: “Tempo de tablet”, “Escolher o jantar”).
+
+Proteção emocional: se as estrelas acabarem, o app exibe mensagens de incentivo (“Não desanime!”), evitando punições e frustrações.
+
+💬 4. Check-in Emocional
+
+A criança pode indicar como está se sentindo (feliz, cansada, brava, etc.).
+
+Ajuda os pais a entenderem o estado emocional antes de iniciar tarefas mais difíceis.
+
+👨‍👩‍👧 5. Área dos Pais (Controle Total)
+
+Personalização: nome da criança exibido no app.
+
+Editor de rotina: criar, editar, remover e reordenar atividades.
+
+Editor da lojinha: definir recompensas e o custo em estrelas.
+
+Gestão de comportamento: adicionar ou remover estrelas manualmente.
+
+Temas visuais: Azul, Verde, Roxo e Escuro.
+
+🚀 Como Usar
+Instalação
+
+Aplicativo web (SPA), sem instalação complexa.
+
+Basta baixar o arquivo index.html e abrir em qualquer navegador moderno (celular, tablet ou computador).
+
+Configuração (Pais)
+
+Abra o app
+
+Clique no ícone ⚙️
+
+Defina o nome da criança
+
+Ajuste a rotina
+
+Configure as recompensas
+
+Uso Diário (Criança)
+
+Toque em ▶️ para iniciar uma atividade
+
+Acompanhe o tempo
+
+Ao finalizar, toque em ⭐ Pegar Estrelinha
+
+Junte estrelas e troque por recompensas na lojinha 🎁
+
+🛠️ Tecnologias Utilizadas
+
+HTML5
+
+JavaScript (Vanilla ES6+)
+
+Tailwind CSS (CDN)
+
+Font Awesome (CDN)
+
+💾 Salvamento de Dados
+
+Todos os dados são salvos automaticamente no LocalStorage do navegador.
+
+⚠️ Limpar o cache ou usar modo anônimo apaga os dados.
+
+🎨 Temas Disponíveis
+
+🔵 Azul – calmo e focado
+
+🟢 Verde – relaxante
+
+🟣 Roxo – criativo
+
+⚫ Escuro – alto contraste
+
+💙 Desenvolvido com carinho para apoiar famílias no dia a dia, promovendo estrutura sem rigidez, limites sem punição e aprendizado com acolhimento.
