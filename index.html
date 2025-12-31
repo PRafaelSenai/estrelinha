@@ -8,6 +8,8 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Supabase JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     
     <style>
         body {
@@ -203,6 +205,25 @@
     </div>
 
     <script>
+        // --- CONFIGURAÇÃO SUPABASE ---
+        const SUPABASE_URL = 'https://acqekxssxnwkausjsdsq.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFjcWVreHNzeG53a2F1c2pzZHNxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjcyMTI4NjMsImV4cCI6MjA4Mjc4ODg2M30.sMHhogOnq5YE80yvbKfrx7Dcy9nZi2IU2oJSYjYrf60';
+        
+        // Inicializar cliente Supabase
+        let supabaseClient = null;
+        if (SUPABASE_URL && SUPABASE_ANON_KEY) {
+            supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            console.log('✅ Supabase conectado com sucesso!');
+        } else {
+            console.warn('⚠️ Supabase não configurado. Usando apenas localStorage.');
+        }
+        
+        // ID único do usuário/dispositivo (pode ser melhorado com autenticação)
+        const USER_ID = localStorage.getItem('estrelinha_user_id') || `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        if (!localStorage.getItem('estrelinha_user_id')) {
+            localStorage.setItem('estrelinha_user_id', USER_ID);
+        }
+
         // --- DADOS E ESTADO ---
         const AVAILABLE_ICONS = [
             'fa-mug-hot', 'fa-utensils', 'fa-burger', 'fa-apple-whole', 
@@ -231,6 +252,7 @@
             { id: 4, title: 'Brinquedo Pequeno', cost: 20, icon: 'fa-gift' }
         ];
 
+        // Carregar dados do localStorage primeiro (fallback)
         let savedState = localStorage.getItem('minhaRotinaData_v8_estrelinha');
         
         let state = savedState ? JSON.parse(savedState) : {
@@ -246,6 +268,34 @@
         };
 
         if(!state.rewards) state.rewards = DEFAULT_REWARDS;
+        
+        // Carregar dados do Supabase se disponível
+        async function loadDataFromSupabase() {
+            if (!supabaseClient) return;
+            
+            try {
+                const { data, error } = await supabaseClient
+                    .from('estrelinha_data')
+                    .select('*')
+                    .eq('user_id', USER_ID)
+                    .single();
+                
+                if (error && error.code !== 'PGRST116') { // PGRST116 = nenhum resultado encontrado
+                    console.error('Erro ao carregar do Supabase:', error);
+                    return;
+                }
+                
+                if (data && data.data) {
+                    const supabaseState = JSON.parse(data.data);
+                    // Mesclar dados do Supabase com estado atual
+                    state = { ...state, ...supabaseState };
+                    // Salvar no localStorage também como backup
+                    localStorage.setItem('minhaRotinaData_v8_estrelinha', JSON.stringify(state));
+                }
+            } catch (err) {
+                console.error('Erro ao carregar dados do Supabase:', err);
+            }
+        }
 
         let timerInterval = null;
         let timeLeft = 0;
@@ -281,7 +331,7 @@
             }
         }
 
-        function saveData() {
+        async function saveData() {
             const dataToSave = {
                 view: state.view === 'active-task' ? 'child' : state.view,
                 theme: state.theme,
@@ -292,7 +342,32 @@
                 routine: state.routine,
                 rewards: state.rewards
             };
+            
+            // Salvar no localStorage (sempre, como backup)
             localStorage.setItem('minhaRotinaData_v8_estrelinha', JSON.stringify(dataToSave));
+            
+            // Salvar no Supabase se disponível
+            if (supabaseClient) {
+                try {
+                    const { error } = await supabaseClient
+                        .from('estrelinha_data')
+                        .upsert({
+                            user_id: USER_ID,
+                            data: JSON.stringify(dataToSave),
+                            updated_at: new Date().toISOString()
+                        }, {
+                            onConflict: 'user_id'
+                        });
+                    
+                    if (error) {
+                        console.error('Erro ao salvar no Supabase:', error);
+                        showErrorToast('Erro ao salvar na nuvem');
+                    }
+                } catch (err) {
+                    console.error('Erro ao salvar no Supabase:', err);
+                    showErrorToast('Erro ao salvar na nuvem');
+                }
+            }
         }
 
         const appContainer = document.getElementById('app-container');
@@ -520,7 +595,10 @@
         function formatTime(s){const m=Math.floor(s/60),sec=s%60;return `${m}:${sec<10?'0':''}${sec}`;}
         function formatDuration(m){return m>=60?`${Math.floor(m/60)}h${m%60>0?` ${m%60}m`:''}`:`${m} min`;}
 
-        window.onload = function() { render(); };
+        window.onload = async function() { 
+            await loadDataFromSupabase();
+            render(); 
+        };
     </script>
 </body>
 </html>
