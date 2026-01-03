@@ -3,115 +3,94 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Estrelinha - Rotina Divertida</title>
+    <title>Estrelinha - Inteligente ✨</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Supabase JS -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Markdown Parser -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     
     <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            overscroll-behavior: none;
-            user-select: none;
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        /* Animações */
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; overscroll-behavior: none; user-select: none; -webkit-tap-highlight-color: transparent; }
         @keyframes bounce-in { 0% { transform: scale(0.3); opacity: 0; } 50% { transform: scale(1.05); } 100% { transform: scale(1); opacity: 1; } }
         @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
         @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-10px); } 100% { transform: translateY(0px); } }
         @keyframes slide-up { from { transform: translateY(100%); } to { transform: translateY(0); } }
-        
-        @keyframes heartbeat {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.2); }
-            100% { transform: scale(1); }
-        }
-
+        @keyframes heartbeat { 0% { transform: scale(1); } 50% { transform: scale(1.2); } 100% { transform: scale(1); } }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         .animate-bounce-in { animation: bounce-in 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards; }
         .animate-shake { animation: shake 0.4s ease-in-out; }
         .animate-float { animation: float 3s ease-in-out infinite; }
         .animate-slide-up { animation: slide-up 0.3s ease-out forwards; }
         .animate-heartbeat { animation: heartbeat 1s infinite; }
-        
-        /* Temas */
+        .animate-spin-custom { animation: spin 1s linear infinite; }
         .theme-blue { --bg-primary: #eff6ff; --text-primary: #1e293b; --accent: #3b82f6; --accent-light: #dbeafe; }
         .theme-green { --bg-primary: #f0fdf4; --text-primary: #14532d; --accent: #22c55e; --accent-light: #dcfce7; }
         .theme-purple { --bg-primary: #faf5ff; --text-primary: #4c1d95; --accent: #a855f7; --accent-light: #f3e8ff; }
         .theme-dark { --bg-primary: #0f172a; --text-primary: #f1f5f9; --accent: #6366f1; --accent-light: #1e293b; }
-
-        #app-container {
-            background-color: var(--bg-primary);
-            color: var(--text-primary);
-            transition: background-color 0.5s, color 0.5s;
-        }
-        
-        .shake-trigger {
-            animation: shake 0.4s ease-in-out;
-        }
+        #app-container { background-color: var(--bg-primary); color: var(--text-primary); transition: background-color 0.5s, color 0.5s; }
+        .shake-trigger { animation: shake 0.4s ease-in-out; }
+        #loading-screen { position: fixed; inset: 0; background: white; z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .text-gradient-ai { background: linear-gradient(to right, #3b82f6, #8b5cf6, #ec4899); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
     </style>
 </head>
 <body>
 
+    <!-- Tela de Carregamento Inicial -->
+    <div id="loading-screen">
+        <div class="w-16 h-16 border-4 border-blue-200 border-t-blue-500 rounded-full animate-spin-custom mb-4"></div>
+        <h2 class="text-xl font-bold text-slate-700">Iniciando...</h2>
+        <p id="loading-text" class="text-sm text-slate-400 mt-2">Preparando Estrelinha</p>
+    </div>
+
     <!-- Container Principal -->
-    <div id="app-container" class="theme-blue w-full h-screen max-w-md mx-auto flex flex-col relative overflow-hidden sm:border-x sm:border-slate-200 shadow-2xl">
+    <div id="app-container" class="theme-blue w-full h-screen max-w-md mx-auto flex flex-col relative overflow-hidden sm:border-x sm:border-slate-200 shadow-2xl hidden">
         
         <!-- Conteúdo dinâmico -->
         <div id="main-content" class="flex-1 flex flex-col h-full overflow-hidden relative"></div>
 
-        <!-- --- MODAIS E OVERLAYS --- -->
-        
-        <!-- 1. Overlay de Ganho de Estrela -->
+        <!-- INDICADOR DE STATUS -->
+        <div id="status-indicator" class="absolute bottom-2 left-2 z-50 text-[10px] text-slate-500 font-bold flex items-center gap-1 pointer-events-none transition-opacity duration-500">
+            <i class="fa-solid fa-cloud"></i> Verificando...
+        </div>
+
+        <!-- OVERLAYS (Mantidos) -->
         <div id="reward-overlay" class="hidden absolute inset-0 bg-black/60 z-50 flex items-center justify-center backdrop-blur-sm">
             <div class="bg-white p-8 rounded-3xl text-center shadow-2xl animate-bounce-in transform scale-110 w-80 border-4 border-yellow-300">
-                <i class="fa-solid fa-star text-yellow-400 text-7xl mb-4 animate-spin-slow" style="animation-duration: 3s; filter: drop-shadow(0 0 10px gold);"></i>
+                <i class="fa-solid fa-star text-yellow-400 text-7xl mb-4 animate-spin-custom" style="animation-duration: 3s; filter: drop-shadow(0 0 10px gold);"></i>
                 <h2 class="text-3xl font-bold text-slate-800 mb-2">Muito Bem!</h2>
                 <p class="text-slate-500 text-lg">+1 Estrelinha</p>
                 <button onclick="hideOverlays()" class="mt-6 bg-yellow-400 text-white font-bold py-3 px-8 rounded-full shadow-lg hover:bg-yellow-500 transition w-full text-xl">Legal!</button>
             </div>
         </div>
 
-        <!-- 2. Overlay de Perda de Estrela -->
         <div id="penalty-overlay" class="hidden absolute inset-0 bg-black/60 z-50 flex items-center justify-center backdrop-blur-sm">
             <div class="bg-white p-8 rounded-3xl text-center shadow-2xl animate-shake w-80 border-4 border-red-300">
-                <div class="relative w-20 h-20 mx-auto mb-4">
-                     <i class="fa-solid fa-star text-slate-300 text-7xl"></i>
-                     <i class="fa-solid fa-slash text-red-500 text-7xl absolute inset-0 opacity-80"></i>
-                </div>
+                <div class="relative w-20 h-20 mx-auto mb-4"><i class="fa-solid fa-star text-slate-300 text-7xl"></i><i class="fa-solid fa-slash text-red-500 text-7xl absolute inset-0 opacity-80"></i></div>
                 <h2 class="text-2xl font-bold text-red-500 mb-2">Poxa vida...</h2>
                 <p class="text-slate-600 font-bold text-lg mb-1">-1 Estrelinha</p>
-                <p class="text-xs text-slate-400">Tarefa não realizada.</p>
                 <button onclick="hideOverlays()" class="mt-6 bg-slate-400 text-white font-bold py-3 px-8 rounded-full shadow-lg hover:bg-slate-500 transition w-full">Vou melhorar</button>
             </div>
         </div>
 
-        <!-- 3. Overlay de INCENTIVO (Proteção emocional) -->
         <div id="encouragement-overlay" class="hidden absolute inset-0 bg-black/60 z-50 flex items-center justify-center backdrop-blur-sm">
             <div class="bg-white p-8 rounded-3xl text-center shadow-2xl animate-bounce-in w-80 border-4 border-blue-300">
-                <div class="relative w-24 h-24 mx-auto mb-4 bg-blue-100 rounded-full flex items-center justify-center">
-                     <i class="fa-solid fa-hand-holding-heart text-blue-500 text-5xl"></i>
-                </div>
+                <div class="relative w-24 h-24 mx-auto mb-4 bg-blue-100 rounded-full flex items-center justify-center"><i class="fa-solid fa-hand-holding-heart text-blue-500 text-5xl"></i></div>
                 <h2 class="text-2xl font-bold text-blue-600 mb-2">Não desanime!</h2>
-                <p class="text-slate-600 text-lg mb-4">Está tudo bem recomeçar.</p>
-                <p class="text-sm text-slate-400 mb-6">Você consegue recuperar suas estrelinhas. Vamos tentar de novo?</p>
+                <p class="text-slate-600 text-lg mb-4">Vamos recomeçar.</p>
                 <button onclick="hideOverlays()" class="bg-blue-500 text-white font-bold py-3 px-8 rounded-full shadow-lg hover:bg-blue-600 transition w-full">Combinado!</button>
             </div>
         </div>
 
-        <!-- 4. Modal de Confirmação de COMPRA -->
         <div id="purchase-confirm-modal" class="hidden absolute inset-0 bg-black/60 z-50 flex items-center justify-center backdrop-blur-sm">
             <div class="bg-white w-80 rounded-3xl p-6 shadow-2xl animate-bounce-in flex flex-col items-center text-center">
-                <div class="w-20 h-20 bg-yellow-100 rounded-full flex items-center justify-center mb-4 text-yellow-500 text-4xl">
-                    <i id="purchase-icon" class="fa-solid fa-gift"></i>
-                </div>
+                <div class="w-20 h-20 bg-yellow-100 rounded-full flex items-center justify-center mb-4 text-yellow-500 text-4xl"><i id="purchase-icon" class="fa-solid fa-gift"></i></div>
                 <h2 class="text-xl font-bold text-slate-800 mb-2">Comprar este prêmio?</h2>
-                <p id="purchase-title" class="text-lg text-slate-600 font-medium mb-1">Nome do Prêmio</p>
-                <div class="bg-yellow-50 text-yellow-700 px-4 py-1 rounded-full font-bold text-sm mb-6 border border-yellow-200">
-                    Custa <span id="purchase-cost">5</span> <i class="fa-solid fa-star text-xs"></i>
-                </div>
+                <p id="purchase-title" class="text-lg text-slate-600 font-medium mb-1">Nome</p>
+                <div class="bg-yellow-50 text-yellow-700 px-4 py-1 rounded-full font-bold text-sm mb-6 border border-yellow-200">Custa <span id="purchase-cost">5</span> <i class="fa-solid fa-star text-xs"></i></div>
                 <div class="flex gap-3 w-full">
                     <button onclick="closePurchaseModal()" class="flex-1 py-3 rounded-xl font-bold text-slate-500 hover:bg-slate-100 transition">Cancelar</button>
                     <button onclick="confirmPurchase()" class="flex-1 py-3 rounded-xl font-bold bg-green-500 text-white shadow-lg hover:bg-green-600 transition">Sim, Quero!</button>
@@ -119,277 +98,137 @@
             </div>
         </div>
 
-        <!-- 5. Overlay de SUCESSO na Compra -->
+        <!-- SUCESSO DE COMPRA -->
         <div id="redeem-success-overlay" class="hidden absolute inset-0 bg-black/60 z-50 flex items-center justify-center backdrop-blur-sm">
             <div class="bg-white p-6 rounded-3xl text-center shadow-2xl animate-bounce-in w-80 border-4 border-green-400 relative overflow-hidden">
                 <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-red-400 via-yellow-400 to-blue-400"></div>
-                <div class="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 mt-2">
-                    <i class="fa-solid fa-check text-green-500 text-5xl"></i>
-                </div>
+                <div class="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 mt-2"><i class="fa-solid fa-check text-green-500 text-5xl"></i></div>
                 <h2 class="text-2xl font-bold text-slate-800 mb-2">Comprado!</h2>
-                <p class="text-slate-500 mb-6">Mostre esta tela para um adulto.</p>
-                <button onclick="hideOverlays()" class="bg-green-500 text-white font-bold py-3 px-8 rounded-full shadow-lg hover:bg-green-600 transition w-full">Usar Agora</button>
+                <div class="flex flex-col gap-2 mt-4">
+                    <button onclick="startRewardTimer()" id="btn-start-reward-timer" class="bg-blue-500 text-white font-bold py-3 px-8 rounded-full shadow-lg hover:bg-blue-600 transition w-full flex items-center justify-center gap-2"><i class="fa-solid fa-stopwatch"></i> Iniciar Tempo</button>
+                    <button onclick="hideOverlays()" class="bg-slate-100 text-slate-500 font-bold py-3 px-8 rounded-full hover:bg-slate-200 transition w-full">Usar Depois</button>
+                </div>
             </div>
         </div>
 
-        <!-- 6. Toast de Erro -->
         <div id="error-toast" class="hidden absolute top-20 left-1/2 transform -translate-x-1/2 bg-red-500 text-white px-6 py-3 rounded-full shadow-xl font-bold z-50 flex items-center gap-2 whitespace-nowrap">
-            <i class="fa-solid fa-circle-xmark"></i>
-            <span id="error-toast-msg">Saldo insuficiente!</span>
+            <i class="fa-solid fa-circle-xmark"></i> <span id="error-toast-msg">Erro!</span>
         </div>
 
-        <!-- 7. Modal de Edição de Tarefa -->
+        <div id="sync-toast" class="hidden absolute bottom-4 right-4 bg-white/90 backdrop-blur text-slate-600 px-3 py-1 rounded-full shadow-sm text-xs border border-slate-200 flex items-center gap-2 z-40">
+            <i class="fa-solid fa-cloud-arrow-up text-blue-500 animate-pulse"></i> Salvando...
+        </div>
+
+        <!-- Modais de Edição -->
         <div id="task-modal" class="hidden absolute inset-0 bg-black/50 z-40 flex items-end sm:items-center justify-center backdrop-blur-sm">
             <div class="bg-white w-full sm:w-11/12 sm:rounded-3xl rounded-t-3xl p-6 shadow-2xl animate-slide-up h-[85vh] sm:h-auto flex flex-col">
-                <div class="flex justify-between items-center mb-6">
-                    <h2 class="text-xl font-bold text-slate-800" id="modal-title">Editar Atividade</h2>
-                    <button onclick="closeTaskModal()" class="p-2 bg-slate-100 rounded-full text-slate-500 hover:bg-slate-200"><i class="fa-solid fa-times"></i></button>
-                </div>
+                <div class="flex justify-between items-center mb-6"><h2 class="text-xl font-bold text-slate-800" id="modal-title">Editar Atividade</h2><button onclick="closeTaskModal()" class="p-2 bg-slate-100 rounded-full text-slate-500 hover:bg-slate-200"><i class="fa-solid fa-times"></i></button></div>
                 <div class="flex-1 overflow-y-auto space-y-4 pr-2">
-                    <div>
-                        <label class="block text-sm font-bold text-slate-500 mb-1">Nome</label>
-                        <input type="text" id="edit-title" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 font-medium outline-none">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-bold text-slate-500 mb-1">Duração (min)</label>
-                        <div class="flex items-center gap-4">
-                            <input type="range" id="edit-duration-range" min="1" max="120" class="flex-1 accent-blue-500" oninput="syncDuration(this.value)">
-                            <div class="w-16 bg-slate-100 border rounded-xl p-2 text-center font-bold text-slate-700" id="edit-duration-display">30</div>
-                        </div>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-bold text-slate-500 mb-2">Ícone</label>
-                        <div class="grid grid-cols-5 gap-2" id="icon-grid"></div>
-                    </div>
+                    <div><label class="block text-sm font-bold text-slate-500 mb-1">Nome</label><input type="text" id="edit-title" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 font-medium outline-none"></div>
+                    <div><label class="block text-sm font-bold text-slate-500 mb-1">Duração (min)</label><div class="flex items-center gap-4"><input type="range" id="edit-duration-range" min="1" max="120" class="flex-1 accent-blue-500" oninput="syncDuration(this.value)"><div class="w-16 bg-slate-100 border rounded-xl p-2 text-center font-bold text-slate-700" id="edit-duration-display">30</div></div></div>
+                    <div><label class="block text-sm font-bold text-slate-500 mb-2">Ícone</label><div class="grid grid-cols-5 gap-2" id="icon-grid"></div></div>
                 </div>
-                <div class="mt-6 pt-4 border-t border-slate-100 flex gap-3">
-                    <button id="btn-delete-task" onclick="deleteCurrentTask()" class="hidden px-4 py-3 bg-red-50 text-red-500 rounded-xl font-bold"><i class="fa-solid fa-trash"></i></button>
-                    <button onclick="saveTask()" class="flex-1 bg-blue-500 text-white py-3 rounded-xl font-bold shadow-lg">Salvar</button>
-                </div>
+                <div class="mt-6 pt-4 border-t border-slate-100 flex gap-3"><button id="btn-delete-task" onclick="deleteCurrentTask()" class="hidden px-4 py-3 bg-red-50 text-red-500 rounded-xl font-bold"><i class="fa-solid fa-trash"></i></button><button onclick="saveTask()" class="flex-1 bg-blue-500 text-white py-3 rounded-xl font-bold shadow-lg">Salvar</button></div>
             </div>
         </div>
 
-        <!-- 8. Modal de Edição de RECOMPENSA -->
         <div id="reward-modal" class="hidden absolute inset-0 bg-black/50 z-40 flex items-end sm:items-center justify-center backdrop-blur-sm">
             <div class="bg-white w-full sm:w-11/12 sm:rounded-3xl rounded-t-3xl p-6 shadow-2xl animate-slide-up h-[85vh] sm:h-auto flex flex-col">
-                <div class="flex justify-between items-center mb-6">
-                    <h2 class="text-xl font-bold text-slate-800" id="reward-modal-title">Editar Prêmio</h2>
-                    <button onclick="closeRewardModal()" class="p-2 bg-slate-100 rounded-full text-slate-500 hover:bg-slate-200"><i class="fa-solid fa-times"></i></button>
-                </div>
+                <div class="flex justify-between items-center mb-6"><h2 class="text-xl font-bold text-slate-800" id="reward-modal-title">Editar Prêmio</h2><button onclick="closeRewardModal()" class="p-2 bg-slate-100 rounded-full text-slate-500 hover:bg-slate-200"><i class="fa-solid fa-times"></i></button></div>
                 <div class="flex-1 overflow-y-auto space-y-4 pr-2">
-                    <div>
-                        <label class="block text-sm font-bold text-slate-500 mb-1">Nome do Prêmio</label>
-                        <input type="text" id="reward-title" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 font-medium outline-none" placeholder="Ex: Escolher Filme">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-bold text-slate-500 mb-1">Preço (Estrelas)</label>
-                        <div class="flex items-center gap-4">
-                            <input type="range" id="reward-cost-range" min="1" max="50" class="flex-1 accent-yellow-400" oninput="syncCost(this.value)">
-                            <div class="w-16 bg-yellow-50 border border-yellow-200 rounded-xl p-2 text-center font-bold text-yellow-700 flex items-center justify-center gap-1">
-                                <span id="reward-cost-display">5</span> <i class="fa-solid fa-star text-xs"></i>
-                            </div>
-                        </div>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-bold text-slate-500 mb-2">Ícone</label>
-                        <div class="grid grid-cols-5 gap-2" id="reward-icon-grid"></div>
-                    </div>
+                    <div><label class="block text-sm font-bold text-slate-500 mb-1">Nome</label><input type="text" id="reward-title" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 font-medium outline-none"></div>
+                    <div><label class="block text-sm font-bold text-slate-500 mb-1">Preço</label><div class="flex items-center gap-4"><input type="range" id="reward-cost-range" min="1" max="50" class="flex-1 accent-yellow-400" oninput="syncCost(this.value)"><div class="w-16 bg-yellow-50 border border-yellow-200 rounded-xl p-2 text-center font-bold text-yellow-700"><span id="reward-cost-display">5</span></div></div></div>
+                    <div><label class="block text-sm font-bold text-slate-500 mb-2">Ícone</label><div class="grid grid-cols-5 gap-2" id="reward-icon-grid"></div></div>
                 </div>
-                <div class="mt-6 pt-4 border-t border-slate-100 flex gap-3">
-                    <button id="btn-delete-reward" onclick="deleteCurrentReward()" class="hidden px-4 py-3 bg-red-50 text-red-500 rounded-xl font-bold"><i class="fa-solid fa-trash"></i></button>
-                    <button onclick="saveReward()" class="flex-1 bg-yellow-400 text-slate-900 py-3 rounded-xl font-bold shadow-lg">Salvar Prêmio</button>
-                </div>
+                <div class="mt-6 pt-4 border-t border-slate-100 flex gap-3"><button id="btn-delete-reward" onclick="deleteCurrentReward()" class="hidden px-4 py-3 bg-red-50 text-red-500 rounded-xl font-bold"><i class="fa-solid fa-trash"></i></button><button onclick="saveReward()" class="flex-1 bg-yellow-400 text-slate-900 py-3 rounded-xl font-bold shadow-lg">Salvar Prêmio</button></div>
             </div>
         </div>
 
+        <!-- AI Modals -->
+        <div id="ai-modal" class="hidden absolute inset-0 bg-black/60 z-50 flex items-center justify-center backdrop-blur-sm">
+            <div class="bg-white w-80 rounded-3xl p-6 shadow-2xl animate-bounce-in flex flex-col">
+                <div class="flex justify-between items-center mb-4"><h2 class="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-purple-500"><i class="fa-solid fa-wand-magic-sparkles mr-2"></i>Criar com IA</h2><button onclick="closeAIModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-times"></i></button></div>
+                <p class="text-sm text-slate-500 mb-4">Descreva a rotina que deseja e a IA criará as tarefas para você.</p>
+                <textarea id="ai-prompt" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 mb-4 h-24 text-sm focus:ring-2 focus:ring-purple-400 outline-none resize-none" placeholder="Ex: Rotina da manhã..."></textarea>
+                <button onclick="generateRoutineAI()" id="btn-generate-ai" class="w-full py-3 rounded-xl font-bold bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg hover:opacity-90 transition flex items-center justify-center gap-2"><span>Gerar Mágica</span> <i class="fa-solid fa-bolt"></i></button>
+            </div>
+        </div>
+
+        <div id="ai-advice-modal" class="hidden absolute inset-0 bg-black/60 z-50 flex items-center justify-center backdrop-blur-sm">
+            <div class="bg-white w-80 rounded-3xl p-6 shadow-2xl animate-bounce-in flex flex-col h-[60vh]">
+                <div class="flex justify-between items-center mb-4 border-b pb-2"><h2 class="text-lg font-bold text-slate-700 flex items-center gap-2"><i class="fa-solid fa-user-doctor text-green-500"></i> Conselheiro</h2><button onclick="closeAdviceModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-times"></i></button></div>
+                <div id="advice-content" class="flex-1 overflow-y-auto text-sm text-slate-600 leading-relaxed mb-4 p-2 bg-slate-50 rounded-xl">Olá! Sou seu assistente de apoio. Digite abaixo sua dúvida.</div>
+                <div class="flex gap-2"><input type="text" id="advice-prompt" class="flex-1 bg-white border border-slate-200 rounded-xl px-3 text-sm focus:border-green-400 outline-none" placeholder="Ex: Ele não quer banho..."><button onclick="getAdviceAI()" id="btn-ask-ai" class="w-10 h-10 bg-green-500 text-white rounded-xl flex items-center justify-center shadow-md hover:bg-green-600"><i class="fa-solid fa-paper-plane"></i></button></div>
+            </div>
+        </div>
     </div>
 
     <script>
-        // --- CONFIGURAÇÃO SUPABASE ---
-        const SUPABASE_URL = 'https://acqekxssxnwkausjsdsq.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFjcWVreHNzeG53a2F1c2pzZHNxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjcyMTI4NjMsImV4cCI6MjA4Mjc4ODg2M30.sMHhogOnq5YE80yvbKfrx7Dcy9nZi2IU2oJSYjYrf60';
+        // --- CONFIGURAÇÃO ---
+        const apiKey = ""; 
+        // Credenciais atualizadas
+        const SUPABASE_URL = "https://acqekxssxnwkausjsdsq.supabase.co";
+        const SUPABASE_KEY = "sb_publishable_IZcuSSEGmo3NrOVQZqbA6g_hUEvvJkS";
         
-        // Inicializar cliente Supabase
-        let supabaseClient = null;
-        if (SUPABASE_URL && SUPABASE_ANON_KEY) {
-            supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-            console.log('✅ Supabase conectado com sucesso!');
-        } else {
-            console.warn('⚠️ Supabase não configurado. Usando apenas localStorage.');
-        }
-        
-        // ID único do usuário/dispositivo (pode ser melhorado com autenticação)
-        const USER_ID = localStorage.getItem('estrelinha_user_id') || `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-        if (!localStorage.getItem('estrelinha_user_id')) {
-            localStorage.setItem('estrelinha_user_id', USER_ID);
-        }
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        let _user = null;
+        let _isOffline = false;
 
-        // --- DADOS E ESTADO ---
-        const AVAILABLE_ICONS = [
-            'fa-mug-hot', 'fa-utensils', 'fa-burger', 'fa-apple-whole', 
-            'fa-ice-cream', 'fa-candy-cane', 'fa-pizza-slice', 
-            'fa-school', 'fa-book', 'fa-pencil', 'fa-laptop', 
-            'fa-tv', 'fa-gamepad', 'fa-puzzle-piece', 'fa-music', 
-            'fa-bed', 'fa-bath', 'fa-toilet', 'fa-shirt', 
-            'fa-person-swimming', 'fa-futbol', 'fa-bicycle', 'fa-person-running',
-            'fa-user-doctor', 'fa-tooth', 'fa-brain', 'fa-pills',
-            'fa-car', 'fa-bus', 'fa-cart-shopping', 'fa-tree',
-            'fa-gift', 'fa-trophy', 'fa-ticket', 'fa-plane'
-        ];
+        // --- ESTADO ---
+        const AVAILABLE_ICONS = ['fa-mug-hot', 'fa-utensils', 'fa-burger', 'fa-apple-whole', 'fa-ice-cream', 'fa-candy-cane', 'fa-pizza-slice', 'fa-school', 'fa-book', 'fa-pencil', 'fa-laptop', 'fa-tv', 'fa-gamepad', 'fa-puzzle-piece', 'fa-music', 'fa-bed', 'fa-bath', 'fa-toilet', 'fa-shirt', 'fa-person-swimming', 'fa-futbol', 'fa-bicycle', 'fa-person-running', 'fa-user-doctor', 'fa-tooth', 'fa-brain', 'fa-pills', 'fa-car', 'fa-bus', 'fa-cart-shopping', 'fa-tree', 'fa-gift', 'fa-trophy', 'fa-ticket', 'fa-plane'];
+        const DEFAULT_ROUTINE = [{ id: 1, title: 'Café da Manhã', icon: 'fa-mug-hot', duration: 15, completed: false, active: true }, { id: 2, title: 'Escola', icon: 'fa-school', duration: 240, completed: false, active: true }, { id: 3, title: 'Almoço', icon: 'fa-utensils', duration: 30, completed: false, active: true }, { id: 4, title: 'Banho', icon: 'fa-bath', duration: 20, completed: false, active: true }, { id: 5, title: 'Dormir', icon: 'fa-bed', duration: 600, completed: false, active: true }];
+        const DEFAULT_REWARDS = [{ id: 1, title: '15min de Tablet', cost: 3, icon: 'fa-tablet-screen-button' }, { id: 2, title: 'Escolher o Jantar', cost: 5, icon: 'fa-utensils' }, { id: 3, title: 'Passeio no Parque', cost: 10, icon: 'fa-tree' }];
 
-        const DEFAULT_ROUTINE = [
-            { id: 1, title: 'Café da Manhã', icon: 'fa-mug-hot', duration: 15, completed: false },
-            { id: 2, title: 'Escola', icon: 'fa-school', duration: 240, completed: false },
-            { id: 3, title: 'Almoço', icon: 'fa-utensils', duration: 30, completed: false },
-            { id: 4, title: 'Banho', icon: 'fa-bath', duration: 20, completed: false },
-            { id: 5, title: 'Dormir', icon: 'fa-bed', duration: 600, completed: false },
-        ];
-
-        const DEFAULT_REWARDS = [
-            { id: 1, title: '15min de Tablet', cost: 3, icon: 'fa-tablet-screen-button' },
-            { id: 2, title: 'Escolher o Jantar', cost: 5, icon: 'fa-utensils' },
-            { id: 3, title: 'Passeio no Parque', cost: 10, icon: 'fa-tree' },
-            { id: 4, title: 'Brinquedo Pequeno', cost: 20, icon: 'fa-gift' }
-        ];
-
-        // Carregar dados do localStorage primeiro (fallback)
-        let savedState = localStorage.getItem('minhaRotinaData_v8_estrelinha');
-        
-        let state = savedState ? JSON.parse(savedState) : {
-            view: 'child',
-            theme: 'theme-blue',
-            childName: '',
-            stars: 5,
-            soundEnabled: true,
-            activeTask: null,
-            currentFeeling: null,
-            routine: DEFAULT_ROUTINE,
-            rewards: DEFAULT_REWARDS
+        let savedLocal = localStorage.getItem('minhaRotinaData_v11.2_estrelinha');
+        let state = savedLocal ? JSON.parse(savedLocal) : { 
+            view: 'child', 
+            isOfflineMode: false,
+            theme: 'theme-blue', childName: '', stars: 5, soundEnabled: true, activeTask: null, activeTaskEndTime: null, currentFeeling: null,
+            routine: DEFAULT_ROUTINE, rewards: DEFAULT_REWARDS
         };
-
+        
         if(!state.rewards) state.rewards = DEFAULT_REWARDS;
-        
-        // Carregar dados do Supabase se disponível
-        async function loadDataFromSupabase() {
-            if (!supabaseClient) return;
-            
-            try {
-                const { data, error } = await supabaseClient
-                    .from('estrelinha_data')
-                    .select('*')
-                    .eq('user_id', USER_ID)
-                    .single();
-                
-                if (error && error.code !== 'PGRST116') { // PGRST116 = nenhum resultado encontrado
-                    console.error('Erro ao carregar do Supabase:', error);
-                    return;
-                }
-                
-                if (data && data.data) {
-                    const supabaseState = JSON.parse(data.data);
-                    // Mesclar dados do Supabase com estado atual
-                    state = { ...state, ...supabaseState };
-                    // Salvar no localStorage também como backup
-                    localStorage.setItem('minhaRotinaData_v8_estrelinha', JSON.stringify(state));
-                }
-            } catch (err) {
-                console.error('Erro ao carregar dados do Supabase:', err);
-            }
-        }
+        state.routine.forEach(t => { if(t.active === undefined) t.active = true; });
 
-        let timerInterval = null;
-        let timeLeft = 0;
-        let isPaused = false;
-        let editingTaskId = null;
-        let editingRewardId = null;
-        let selectedIcon = 'fa-star';
-        let pendingPurchaseId = null;
-
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        
-        function playSound(type) {
-            if (!state.soundEnabled) return;
-            if (audioCtx.state === 'suspended') audioCtx.resume();
-            const osc = audioCtx.createOscillator();
-            const gainNode = audioCtx.createGain();
-            osc.connect(gainNode);
-            gainNode.connect(audioCtx.destination);
-            const now = audioCtx.currentTime;
-
-            if (type === 'success') {
-                osc.type = 'sine'; osc.frequency.setValueAtTime(523.25, now); osc.frequency.linearRampToValueAtTime(783.99, now + 0.2); gainNode.gain.setValueAtTime(0.2, now); gainNode.gain.linearRampToValueAtTime(0, now + 0.4); osc.start(now); osc.stop(now + 0.4);
-            } else if (type === 'error') {
-                osc.type = 'sawtooth'; osc.frequency.setValueAtTime(150, now); osc.frequency.exponentialRampToValueAtTime(50, now + 0.3); gainNode.gain.setValueAtTime(0.3, now); gainNode.gain.linearRampToValueAtTime(0, now + 0.3); osc.start(now); osc.stop(now + 0.3);
-            } else if (type === 'click') {
-                osc.type = 'triangle'; osc.frequency.setValueAtTime(400, now); gainNode.gain.setValueAtTime(0.05, now); gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.1); osc.start(now); osc.stop(now + 0.1);
-            } else if (type === 'alarm') {
-                osc.type = 'square'; osc.frequency.setValueAtTime(440, now); gainNode.gain.setValueAtTime(0.1, now); gainNode.gain.linearRampToValueAtTime(0, now + 0.5); osc.start(now); osc.stop(now + 0.5);
-            } else if (type === 'cash') {
-                osc.type = 'sine'; osc.frequency.setValueAtTime(1200, now); osc.frequency.linearRampToValueAtTime(2000, now + 0.1); gainNode.gain.setValueAtTime(0.2, now); gainNode.gain.linearRampToValueAtTime(0, now + 0.3); osc.start(now); osc.stop(now + 0.3);
-            } else if (type === 'tick') {
-                osc.type = 'square'; osc.frequency.setValueAtTime(800, now); gainNode.gain.setValueAtTime(0.05, now); gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.05); osc.start(now); osc.stop(now + 0.05);
-            }
-        }
-
-        async function saveData() {
-            const dataToSave = {
-                view: state.view === 'active-task' ? 'child' : state.view,
-                theme: state.theme,
-                childName: state.childName,
-                stars: state.stars,
-                soundEnabled: state.soundEnabled,
-                currentFeeling: state.currentFeeling,
-                routine: state.routine,
-                rewards: state.rewards
-            };
-            
-            // Salvar no localStorage (sempre, como backup)
-            localStorage.setItem('minhaRotinaData_v8_estrelinha', JSON.stringify(dataToSave));
-            
-            // Salvar no Supabase se disponível
-            if (supabaseClient) {
-                try {
-                    const { error } = await supabaseClient
-                        .from('estrelinha_data')
-                        .upsert({
-                            user_id: USER_ID,
-                            data: JSON.stringify(dataToSave),
-                            updated_at: new Date().toISOString()
-                        }, {
-                            onConflict: 'user_id'
-                        });
-                    
-                    if (error) {
-                        console.error('Erro ao salvar no Supabase:', error);
-                        showErrorToast('Erro ao salvar na nuvem');
-                    }
-                } catch (err) {
-                    console.error('Erro ao salvar no Supabase:', err);
-                    showErrorToast('Erro ao salvar na nuvem');
-                }
-            }
-        }
-
+        let timerInterval = null, timeLeft = 0, isPaused = false, editingTaskId = null, editingRewardId = null, selectedIcon = 'fa-star', pendingPurchaseId = null;
         const appContainer = document.getElementById('app-container');
         const mainContent = document.getElementById('main-content');
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
-        function render() {
-            appContainer.className = `${state.theme} w-full h-screen max-w-md mx-auto flex flex-col relative overflow-hidden sm:border-x sm:border-slate-200 shadow-2xl transition-colors duration-500`;
-            mainContent.innerHTML = '';
-            switch(state.view) {
-                case 'child': renderChildDashboard(); break;
-                case 'active-task': renderActiveTask(); break;
-                case 'parent': renderParentDashboard(); break;
-                case 'feelings': renderFeelingsCheckin(); break;
-                case 'store': renderRewardStore(); break;
-            }
-            saveData();
+        // --- RENDERIZADORES ---
+        function renderLoginScreen() {
+            let html = `
+                <div class="flex flex-col h-full bg-slate-50 p-6 justify-center items-center">
+                    <div class="mb-8 text-center animate-bounce-in">
+                        <div class="w-24 h-24 bg-yellow-400 rounded-full flex items-center justify-center mx-auto mb-4 shadow-xl">
+                            <i class="fa-solid fa-star text-white text-5xl"></i>
+                        </div>
+                        <h1 class="text-3xl font-bold text-slate-700">Estrelinha</h1>
+                        <p class="text-slate-400">Rotina divertida</p>
+                    </div>
+                    
+                    <div class="w-full bg-white p-6 rounded-3xl shadow-md border border-slate-100 mb-6">
+                        <input type="email" id="auth-email" placeholder="E-mail" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 mb-3 outline-none focus:border-blue-400 transition">
+                        <input type="password" id="auth-password" placeholder="Senha" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 mb-4 outline-none focus:border-blue-400 transition">
+                        
+                        <div class="flex gap-3">
+                            <button onclick="handleLogin()" id="btn-login" class="flex-1 bg-blue-500 text-white font-bold py-3 rounded-xl hover:bg-blue-600 transition shadow-lg shadow-blue-500/30">Entrar</button>
+                            <button onclick="handleSignUp()" id="btn-signup" class="flex-1 bg-purple-500 text-white font-bold py-3 rounded-xl hover:bg-purple-600 transition shadow-lg shadow-purple-500/30">Criar Conta</button>
+                        </div>
+                    </div>
+
+                    <button onclick="handleOffline()" class="text-slate-400 font-medium text-sm hover:text-slate-600 transition">
+                        Continuar sem conta (Offline)
+                    </button>
+                </div>
+            `;
+            mainContent.innerHTML = html;
         }
 
-        // --- VISUALIZAÇÕES PRINCIPAIS ---
         function renderChildDashboard() {
             const greeting = state.childName ? `Olá, ${state.childName}!` : 'Estrelinha';
-            let html = `<header class="flex justify-between items-center p-6 bg-white/80 backdrop-blur-md shadow-sm z-10 sticky top-0"><div onclick="changeView('store')" class="flex items-center gap-2 bg-yellow-50 px-4 py-2 rounded-full shadow-sm border border-yellow-200 cursor-pointer active:scale-95 transition hover:bg-yellow-100"><i class="fa-solid fa-star text-yellow-400 text-2xl drop-shadow-sm animate-pulse"></i><span class="text-2xl font-bold text-yellow-600">${state.stars}</span><span class="text-xs text-yellow-500 font-medium ml-1">LOJA</span></div><div class="flex gap-2"><button onclick="changeView('feelings')" class="w-10 h-10 flex items-center justify-center bg-pink-100 text-pink-500 rounded-full hover:bg-pink-200 transition shadow-sm"><i class="fa-solid fa-face-smile text-lg"></i></button><button onclick="changeView('parent')" class="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition"><i class="fa-solid fa-gear text-lg"></i></button></div></header><div class="flex-1 overflow-y-auto p-4 space-y-4 pb-24"><div class="ml-2 mb-4"><h1 class="text-2xl font-bold text-slate-800">${greeting}</h1><p class="text-slate-500 text-sm">Sua rotina divertida!</p></div>${state.currentFeeling ? `<div class="bg-white p-3 rounded-2xl shadow-sm flex items-center gap-3 mb-4 border-l-4 border-pink-300"><span class="text-2xl">${getFeelingEmoji(state.currentFeeling)}</span><span class="text-slate-600 font-medium">Estou: <strong>${state.currentFeeling}</strong></span><button onclick="clearFeeling()" class="ml-auto text-slate-300 hover:text-red-400 w-8 h-8 flex items-center justify-center rounded-full"><i class="fa-solid fa-times"></i></button></div>` : ''}${state.routine.length === 0 ? `<div class="text-center p-8 text-slate-400 border-2 border-dashed border-slate-200 rounded-3xl"><i class="fa-solid fa-clipboard-list text-4xl mb-2"></i><p>Peça para configurar sua rotina!</p></div>` : ''}${state.routine.map(task => `<div onclick="${!task.completed ? `startTask(${task.id})` : ''}" class="relative p-4 rounded-3xl flex items-center gap-5 transition-all transform duration-300 ${task.completed ? 'bg-slate-100 opacity-60 grayscale cursor-default' : 'bg-white shadow-md hover:scale-[1.02] hover:shadow-lg cursor-pointer border-l-8 border-[var(--accent)]'}"><div class="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl shrink-0 ${task.completed ? 'bg-slate-200 text-slate-400' : 'bg-[var(--accent-light)] text-[var(--accent)]'}"><i class="fa-solid ${task.icon}"></i></div><div class="flex-1 min-w-0"><h3 class="font-bold text-lg text-slate-800 truncate ${task.completed ? 'line-through' : ''}">${task.title}</h3><p class="text-slate-500 text-sm flex items-center gap-1"><i class="fa-regular fa-clock text-xs"></i> ${formatDuration(task.duration)}</p></div>${task.completed ? '<i class="fa-solid fa-circle-check text-green-500 text-3xl"></i>' : '<div class="bg-[var(--accent-light)] w-10 h-10 rounded-full flex items-center justify-center text-[var(--accent)]"><i class="fa-solid fa-play ml-1"></i></div>'}</div>`).join('')}</div>`;
+            const visibleTasks = state.routine.filter(t => t.active !== false);
+            let html = `<header class="flex justify-between items-center p-6 bg-white/80 backdrop-blur-md shadow-sm z-10 sticky top-0"><div onclick="changeView('store')" class="flex items-center gap-2 bg-yellow-50 px-4 py-2 rounded-full shadow-sm border border-yellow-200 cursor-pointer active:scale-95 transition hover:bg-yellow-100"><i class="fa-solid fa-star text-yellow-400 text-2xl drop-shadow-sm animate-pulse"></i><span class="text-2xl font-bold text-yellow-600">${state.stars}</span><span class="text-xs text-yellow-500 font-medium ml-1">LOJA</span></div><div class="flex gap-2"><button onclick="changeView('feelings')" class="w-10 h-10 flex items-center justify-center bg-pink-100 text-pink-500 rounded-full hover:bg-pink-200 transition shadow-sm"><i class="fa-solid fa-face-smile text-lg"></i></button><button onclick="changeView('parent')" class="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition"><i class="fa-solid fa-gear text-lg"></i></button></div></header><div class="flex-1 overflow-y-auto p-4 space-y-4 pb-24"><div class="ml-2 mb-4"><h1 class="text-2xl font-bold text-slate-800">${greeting}</h1><p class="text-slate-500 text-sm">Sua rotina divertida!</p></div>${state.currentFeeling ? `<div class="bg-white p-3 rounded-2xl shadow-sm flex items-center gap-3 mb-4 border-l-4 border-pink-300"><span class="text-2xl">${getFeelingEmoji(state.currentFeeling)}</span><span class="text-slate-600 font-medium">Estou: <strong>${state.currentFeeling}</strong></span><button onclick="clearFeeling()" class="ml-auto text-slate-300 hover:text-red-400 w-8 h-8 flex items-center justify-center rounded-full"><i class="fa-solid fa-times"></i></button></div>` : ''}${visibleTasks.length===0?`<div class="text-center p-8 text-slate-400 border-2 border-dashed border-slate-200 rounded-3xl"><i class="fa-solid fa-clipboard-list text-4xl mb-2"></i><p>Nenhuma tarefa visível!</p></div>`:''}${visibleTasks.map(task => `<div onclick="${!task.completed ? `startTask(${task.id})` : ''}" class="relative p-4 rounded-3xl flex items-center gap-5 transition-all transform duration-300 ${task.completed ? 'bg-slate-100 opacity-60 grayscale cursor-default' : 'bg-white shadow-md hover:scale-[1.02] hover:shadow-lg cursor-pointer border-l-8 border-[var(--accent)]'}"><div class="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl shrink-0 ${task.completed ? 'bg-slate-200 text-slate-400' : 'bg-[var(--accent-light)] text-[var(--accent)]'}"><i class="fa-solid ${task.icon}"></i></div><div class="flex-1 min-w-0"><h3 class="font-bold text-lg text-slate-800 truncate ${task.completed ? 'line-through' : ''}">${task.title}</h3><p class="text-slate-500 text-sm flex items-center gap-1"><i class="fa-regular fa-clock text-xs"></i> ${formatDuration(task.duration)}</p></div>${task.completed ? '<i class="fa-solid fa-circle-check text-green-500 text-3xl"></i>' : '<div class="bg-[var(--accent-light)] w-10 h-10 rounded-full flex items-center justify-center text-[var(--accent)]"><i class="fa-solid fa-play ml-1"></i></div>'}</div>`).join('')}</div>`;
             mainContent.innerHTML = html;
         }
 
@@ -398,207 +237,341 @@
             mainContent.innerHTML = html;
         }
 
-        // --- TIMER ATIVO COM CONTAGEM REGRESSIVA VISUAL ---
         function renderActiveTask() {
             if (!state.activeTask) { changeView('child'); return; }
-            const totalSeconds = state.activeTask.duration * 60;
-            const percentage = (timeLeft / totalSeconds) * 100;
-            const isFinished = timeLeft <= 0;
-            const isCountdown = timeLeft <= 10 && timeLeft > 0;
+            let displayTime = 0; const total = state.activeTask.duration * 60;
+            if (!isPaused) { const now = Date.now(); const remaining = Math.ceil((state.activeTaskEndTime - now) / 1000); displayTime = Math.max(0, remaining); timeLeft = displayTime; } else { displayTime = timeLeft; }
+            const percentage = (displayTime / total) * 100; const isFinished = displayTime <= 0; const isCountdown = displayTime <= 10 && displayTime > 0;
+            let progressColor = 'bg-green-500'; if (percentage < 50) progressColor = 'bg-yellow-400'; if (percentage < 20) progressColor = 'bg-red-500';
+            const timerContainerClass = isCountdown ? 'text-red-400 animate-heartbeat scale-110 transition-transform duration-200' : 'text-white transition-colors duration-500';
             
-            let progressColor = 'bg-green-500';
-            if (percentage < 50) progressColor = 'bg-yellow-400';
-            if (percentage < 20) progressColor = 'bg-red-500';
+            let buttonsHtml = '';
+            if (state.activeTask.isRewardTimer) {
+                buttonsHtml = !isFinished ? 
+                `<div class="flex flex-col gap-4 w-full px-8"><div class="flex justify-center gap-6"><button onclick="togglePause()" class="w-16 h-16 bg-white/10 rounded-full flex items-center justify-center hover:bg-white/20 transition backdrop-blur-md border border-white/10 active:scale-95"><i class="fa-solid ${isPaused ? 'fa-play pl-1' : 'fa-pause'} text-2xl"></i></button><button onclick="finishTask(false)" class="w-16 h-16 bg-red-500 rounded-full flex items-center justify-center hover:bg-red-600 transition shadow-lg active:scale-95"><i class="fa-solid fa-times text-2xl"></i></button></div><p class="text-center text-white/50 text-sm">Tempo de Recompensa</p></div>` :
+                `<div class="text-center w-full px-4"><p class="text-2xl mb-6 text-yellow-300 font-bold drop-shadow-md animate-bounce">Acabou o Tempo!</p><button onclick="finishTask(false)" class="w-full bg-slate-100 text-slate-900 px-6 py-4 rounded-2xl font-bold text-xl shadow-xl hover:bg-white active:scale-95">Voltar</button></div>`;
+            } else {
+                buttonsHtml = !isFinished ? 
+                `<div class="flex flex-col gap-4 w-full px-8"><div class="flex justify-center gap-6"><button onclick="togglePause()" class="w-16 h-16 bg-white/10 rounded-full flex items-center justify-center hover:bg-white/20 transition backdrop-blur-md border border-white/10 active:scale-95"><i class="fa-solid ${isPaused ? 'fa-play pl-1' : 'fa-pause'} text-2xl"></i></button><button onclick="finishTask(true)" class="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center hover:bg-green-600 transition shadow-lg shadow-green-500/40 transform hover:scale-110 active:scale-95"><i class="fa-solid fa-check text-2xl"></i></button></div></div>` :
+                `<div class="text-center w-full px-4"><p class="text-2xl mb-6 text-yellow-300 font-bold drop-shadow-md animate-bounce">Tempo Esgotado!</p><div class="flex flex-col gap-4 items-center"><button onclick="finishTask(true)" class="w-full bg-yellow-400 text-slate-900 px-6 py-4 rounded-2xl font-bold text-xl shadow-xl hover:bg-yellow-300 transform transition hover:scale-105 active:scale-95 border-b-4 border-yellow-600">Pegar Estrelinha <i class="fa-solid fa-star ml-2"></i></button><button onclick="failTask(true)" class="w-full bg-red-900/50 text-red-200 border border-red-500/30 px-6 py-3 rounded-xl font-medium text-sm hover:bg-red-900/80 transition">Não realizei a tarefa (-1 Estrela)</button></div></div>`;
+            }
 
-            // Estilos dinâmicos para contagem regressiva
-            const timerContainerClass = isCountdown 
-                ? 'text-red-400 animate-heartbeat scale-110 transition-transform duration-200' 
-                : 'text-white transition-colors duration-500';
-
-            let html = `
-                <div class="flex flex-col h-full bg-slate-900 text-white p-6 relative">
-                    <div class="flex justify-between items-center mb-6">
-                        <button onclick="changeView('child')" class="w-10 h-10 flex items-center justify-center bg-white/10 rounded-full hover:bg-white/20 backdrop-blur-md">
-                            <i class="fa-solid fa-chevron-down text-lg"></i>
-                        </button>
-                        <span class="text-white/60 font-medium tracking-widest text-sm uppercase">Em Atividade</span>
-                        <div class="w-10"></div>
-                    </div>
-
-                    <div class="flex-1 flex flex-col items-center justify-center z-10">
-                        <div class="relative mb-8">
-                            <div class="w-48 h-48 rounded-full flex items-center justify-center border-8 border-white/10 bg-white/5 relative z-10 animate-float">
-                                <i class="fa-solid ${state.activeTask.icon} text-7xl text-white drop-shadow-lg"></i>
-                            </div>
-                            ${percentage < 20 && !isFinished ? '<div class="absolute inset-0 bg-red-500 rounded-full opacity-30 animate-ping"></div>' : ''}
-                        </div>
-
-                        <h2 class="text-3xl font-bold mb-2 text-center px-4">${state.activeTask.title}</h2>
-                        
-                        <div class="text-6xl font-mono font-bold mb-8 tabular-nums tracking-tighter ${timerContainerClass}">
-                            ${formatTime(timeLeft)}
-                        </div>
-
-                        ${isCountdown ? `<div class="text-red-400 font-bold mb-4 animate-pulse">QUASE ACABANDO!</div>` : ''}
-
-                        <div class="w-full h-6 bg-black/30 rounded-full overflow-hidden mb-10 border border-white/10">
-                            <div class="h-full transition-all duration-1000 ease-linear ${progressColor}" style="width: ${percentage}%"></div>
-                        </div>
-
-                        ${!isFinished ? `
-                            <div class="flex flex-col gap-4 w-full px-8">
-                                <div class="flex justify-center gap-6">
-                                    <button onclick="togglePause()" class="w-16 h-16 bg-white/10 rounded-full flex items-center justify-center hover:bg-white/20 transition backdrop-blur-md border border-white/10 active:scale-95">
-                                        <i class="fa-solid ${isPaused ? 'fa-play pl-1' : 'fa-pause'} text-2xl"></i>
-                                    </button>
-                                    <button onclick="finishTask(true)" class="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center hover:bg-green-600 transition shadow-lg shadow-green-500/40 transform hover:scale-110 active:scale-95">
-                                        <i class="fa-solid fa-check text-2xl"></i>
-                                    </button>
-                                </div>
-                            </div>
-                        ` : `
-                            <div class="text-center w-full px-4">
-                                <p class="text-2xl mb-6 text-yellow-300 font-bold drop-shadow-md animate-bounce">Tempo Esgotado!</p>
-                                <div class="flex flex-col gap-4 items-center">
-                                    <button onclick="finishTask(true)" class="w-full bg-yellow-400 text-slate-900 px-6 py-4 rounded-2xl font-bold text-xl shadow-xl hover:bg-yellow-300 transform transition hover:scale-105 active:scale-95 border-b-4 border-yellow-600">
-                                        Pegar Estrelinha <i class="fa-solid fa-star ml-2"></i>
-                                    </button>
-                                    
-                                    <button onclick="failTask(true)" class="w-full bg-red-900/50 text-red-200 border border-red-500/30 px-6 py-3 rounded-xl font-medium text-sm hover:bg-red-900/80 transition">
-                                        Não realizei a tarefa (-1 Estrela)
-                                    </button>
-                                </div>
-                            </div>
-                        `}
-                    </div>
-                </div>
-            `;
+            let html = `<div class="flex flex-col h-full bg-slate-900 text-white p-6 relative"><div class="flex justify-between items-center mb-6"><button onclick="changeView('child')" class="w-10 h-10 flex items-center justify-center bg-white/10 rounded-full hover:bg-white/20 backdrop-blur-md"><i class="fa-solid fa-chevron-down text-lg"></i></button><span class="text-white/60 font-medium tracking-widest text-sm uppercase">${state.activeTask.isRewardTimer ? 'Recompensa' : 'Em Atividade'}</span><div class="w-10"></div></div><div class="flex-1 flex flex-col items-center justify-center z-10"><div class="relative mb-8"><div class="w-48 h-48 rounded-full flex items-center justify-center border-8 border-white/10 bg-white/5 relative z-10 animate-float"><i class="fa-solid ${state.activeTask.icon} text-7xl text-white drop-shadow-lg"></i></div>${percentage < 20 && !isFinished ? '<div class="absolute inset-0 bg-red-500 rounded-full opacity-30 animate-ping"></div>' : ''}</div><h2 class="text-3xl font-bold mb-2 text-center px-4">${state.activeTask.title}</h2><div class="text-6xl font-mono font-bold mb-8 tabular-nums tracking-tighter ${timerContainerClass}">${formatTime(displayTime)}</div>${isCountdown ? `<div class="text-red-400 font-bold mb-4 animate-pulse">QUASE ACABANDO!</div>` : ''}<div class="w-full h-6 bg-black/30 rounded-full overflow-hidden mb-10 border border-white/10"><div class="h-full transition-all duration-1000 ease-linear ${progressColor}" style="width: ${percentage}%"></div></div>${buttonsHtml}</div></div>`;
             mainContent.innerHTML = html;
         }
 
-        // --- LÓGICA DE TASK ATUALIZADA ---
+        function renderParentDashboard(){
+            let html=`<div class="flex flex-col h-full bg-slate-50"><header class="bg-white p-4 shadow-sm flex items-center gap-3 border-b border-slate-100 sticky top-0 z-20"><button onclick="changeView('child')" class="p-2 hover:bg-slate-100 rounded-full text-slate-500 transition"><i class="fa-solid fa-arrow-left text-xl"></i></button><h1 class="text-xl font-bold text-slate-800">Área dos Pais</h1></header><div class="flex-1 overflow-y-auto p-5 space-y-8"><section class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200"><h2 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4 text-center">Gestão de Comportamento</h2><div class="flex items-center justify-between gap-4"><button onclick="manualAdjustStars(-1)" class="w-16 h-16 rounded-2xl bg-red-50 text-red-500 border border-red-100 flex items-center justify-center text-3xl shadow-sm active:scale-95 transition hover:bg-red-100"><i class="fa-solid fa-minus"></i></button><div class="flex flex-col items-center"><div class="text-5xl font-bold text-yellow-500 flex items-center gap-2">${state.stars} <i class="fa-solid fa-star text-3xl"></i></div><span class="text-xs text-slate-400 mt-1">Saldo Atual</span></div><button onclick="manualAdjustStars(1)" class="w-16 h-16 rounded-2xl bg-green-50 text-green-500 border border-green-100 flex items-center justify-center text-3xl shadow-sm active:scale-95 transition hover:bg-green-100"><i class="fa-solid fa-plus"></i></button></div></section><section><label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 ml-1">Criança</label><div class="bg-white p-2 rounded-xl shadow-sm border border-slate-200"><input type="text" value="${state.childName}" oninput="updateChildName(this.value)" placeholder="Nome da Criança" class="w-full bg-transparent p-2 outline-none text-slate-700 font-bold"></div></section><section><h2 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 ml-1">Tema</h2><div class="grid grid-cols-4 gap-2">${renderThemeButton('theme-blue', 'bg-blue-500')}${renderThemeButton('theme-green', 'bg-green-500')}${renderThemeButton('theme-purple', 'bg-purple-500')}${renderThemeButton('theme-dark', 'bg-slate-800')}</div></section><section><div class="flex justify-between items-end mb-3 ml-1"><h2 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Rotina Diária (Clique no olho para ocultar)</h2><button onclick="resetDay()" class="text-xs text-red-400 hover:text-red-600 font-medium">Resetar Dia</button></div><div class="bg-white rounded-2xl shadow-sm border border-slate-200 divide-y divide-slate-100">${state.routine.map(task => `<div class="p-4 flex items-center gap-3 hover:bg-slate-50 transition"><div class="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center text-slate-500 ${task.active === false ? 'opacity-30' : ''}"><i class="fa-solid ${task.icon}"></i></div><div class="flex-1 min-w-0 ${task.active === false ? 'opacity-50' : ''}"><div class="font-bold text-slate-700 truncate">${task.title}</div><div class="text-xs text-slate-400">${task.duration} min</div></div><button onclick="toggleTaskVisibility(${task.id})" class="p-2 ${task.active === false ? 'text-slate-300' : 'text-blue-500'} hover:bg-blue-50 rounded-lg mr-1"><i class="fa-solid ${task.active === false ? 'fa-eye-slash' : 'fa-eye'}"></i></button><button onclick="openTaskModal(${task.id})" class="p-2 text-blue-400 hover:bg-blue-50 rounded-lg"><i class="fa-solid fa-pen"></i></button></div>`).join('')}<button onclick="openTaskModal()" class="w-full p-4 text-center text-blue-500 font-bold hover:bg-blue-50 transition rounded-b-2xl"><i class="fa-solid fa-plus-circle"></i> Adicionar</button></div></section><section><div class="flex justify-between items-end mb-3 ml-1"><h2 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Loja de Recompensas</h2></div><div class="bg-white rounded-2xl shadow-sm border border-slate-200 divide-y divide-slate-100">${state.rewards.map(reward => `<div class="p-4 flex items-center gap-3 hover:bg-slate-50 transition"><div class="w-10 h-10 rounded-lg bg-yellow-50 flex items-center justify-center text-yellow-600"><i class="fa-solid ${reward.icon}"></i></div><div class="flex-1 min-w-0"><div class="font-bold text-slate-700 truncate">${reward.title}</div><div class="text-xs text-yellow-600 font-bold flex items-center gap-1">${reward.cost} <i class="fa-solid fa-star text-[10px]"></i></div></div><button onclick="openRewardModal(${reward.id})" class="p-2 text-blue-400 hover:bg-blue-50 rounded-lg"><i class="fa-solid fa-pen"></i></button></div>`).join('')}<button onclick="openRewardModal()" class="w-full p-4 text-center text-yellow-600 font-bold hover:bg-yellow-50 transition rounded-b-2xl"><i class="fa-solid fa-plus-circle"></i> Adicionar Prêmio</button></div></section><div class="p-4"><button onclick="openAIModal()" class="w-full py-3 rounded-xl font-bold bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg hover:opacity-90 transition flex items-center justify-center gap-2"><span>✨ Criar Rotina com IA</span></button><button onclick="openAdviceModal()" class="w-full py-3 rounded-xl font-bold bg-green-500 text-white shadow-lg hover:bg-green-600 transition flex items-center justify-center gap-2 mt-3"><span>🌱 Dica Rápida</span></button></div><div class="p-4 border-t mt-4"><button onclick="handleLogout()" class="text-red-400 text-sm font-bold hover:text-red-600 w-full text-center">Sair da Conta</button></div></div></div>`;
+            mainContent.innerHTML=html;
+        }
+
+        function renderThemeButton(t, c) { return `<button onclick="setTheme('${t}')" class="h-12 rounded-xl border-2 ${state.theme===t ? 'border-slate-800 scale-95':'border-transparent'} ${c} shadow-sm transition-transform"></button>`; }
+        
+        function renderFeelingsCheckin() { 
+            const feelings = [{id:'Feliz',icon:'fa-face-laugh-beam',color:'text-green-500',bg:'bg-green-100'},{id:'Tranquilo',icon:'fa-face-smile',color:'text-blue-500',bg:'bg-blue-100'},{id:'Cansado',icon:'fa-face-tired',color:'text-purple-500',bg:'bg-purple-100'},{id:'Bravo',icon:'fa-face-angry',color:'text-red-500',bg:'bg-red-100'},{id:'Triste',icon:'fa-face-sad-tear',color:'text-blue-300',bg:'bg-blue-50'}]; 
+            let html = `<div class="flex flex-col h-full bg-white p-6 relative"><button onclick="changeView('child')" class="absolute top-6 left-6 w-10 h-10 flex items-center justify-center bg-slate-100 rounded-full hover:bg-slate-200 transition"><i class="fa-solid fa-arrow-left text-slate-600"></i></button><div class="flex-1 flex flex-col items-center justify-center pt-10"><h2 class="text-2xl font-bold text-slate-700 mb-8 text-center">Como você está?</h2><div class="grid grid-cols-2 gap-4 w-full">${feelings.map(f => `<button onclick="selectFeeling('${f.id}')" class="p-4 rounded-2xl ${f.bg} flex flex-col items-center gap-3 transition transform hover:scale-105 active:scale-95"><i class="fa-solid ${f.icon} text-4xl ${f.color}"></i><span class="font-bold text-slate-700">${f.id}</span></button>`).join('')}</div></div></div>`; 
+            mainContent.innerHTML = html; 
+        }
+
+        // --- FUNÇÃO RENDER PRINCIPAL ---
+        function render() {
+            appContainer.className = `${state.theme} w-full h-screen max-w-md mx-auto flex flex-col relative overflow-hidden sm:border-x sm:border-slate-200 shadow-2xl transition-colors duration-500`;
+            mainContent.innerHTML = '';
+            
+            // Se estiver na view 'login', renderiza login. Caso contrário, verifica auth
+            if (state.view === 'login') {
+                renderLoginScreen();
+            } else {
+                switch(state.view) {
+                    case 'child': renderChildDashboard(); break;
+                    case 'active-task': renderActiveTask(); break;
+                    case 'parent': renderParentDashboard(); break;
+                    case 'feelings': renderFeelingsCheckin(); break;
+                    case 'store': renderRewardStore(); break;
+                    default: renderChildDashboard(); break;
+                }
+            }
+            saveData();
+        }
+
+        // --- AUTH HANDLERS ---
+        async function handleLogin() {
+            const email = document.getElementById('auth-email').value;
+            const password = document.getElementById('auth-password').value;
+            if(!email || !password) return showErrorToast("Preencha tudo!");
+            
+            const btn = document.getElementById('btn-login');
+            btn.innerText = "Entrando...";
+            btn.disabled = true;
+
+            try {
+                const { data, error } = await _supabase.auth.signInWithPassword({ email, password });
+                if(error) throw error;
+                _user = data.session.user;
+                _isOffline = false;
+                state.view = 'child';
+                await loadFromSupabase();
+                render();
+            } catch(e) {
+                let msg = e.message;
+                if(msg.includes("Invalid login")) msg = "E-mail ou senha incorretos.";
+                else if(msg.includes("Email not confirmed")) msg = "E-mail não confirmado. Verifique sua caixa de entrada.";
+                else if(msg.includes("limit exceeded")) msg = "Muitas tentativas. Aguarde um pouco.";
+                showErrorToast(msg);
+                btn.innerText = "Entrar";
+                btn.disabled = false;
+            }
+        }
+
+        async function handleSignUp() {
+            const email = document.getElementById('auth-email').value;
+            const password = document.getElementById('auth-password').value;
+            if(!email || !password) return showErrorToast("Preencha e-mail e senha!");
+            if(password.length < 6) return showErrorToast("A senha deve ter no mínimo 6 caracteres.");
+            
+            const btn = document.getElementById('btn-signup');
+            const originalText = btn.innerText;
+            btn.innerText = "Criando...";
+            btn.disabled = true;
+
+            try {
+                const { data, error } = await _supabase.auth.signUp({ email, password });
+                if(error) throw error;
+                
+                if(data.user && !data.session) {
+                    alert("Conta criada com sucesso! \n\nPor favor, verifique seu e-mail (e a pasta de spam) para confirmar o cadastro antes de entrar.");
+                    state.view = 'login'; // Mantém no login
+                    render();
+                } else if (data.session) {
+                    _user = data.session.user;
+                    state.view = 'child';
+                    await loadFromSupabase();
+                    render();
+                }
+            } catch(e) {
+                let msg = e.message;
+                if(msg.includes("already registered")) msg = "Este e-mail já está cadastrado.";
+                else if(msg.includes("valid email")) msg = "Digite um e-mail válido.";
+                else if(msg.includes("at least 6 characters")) msg = "Senha muito curta (mínimo 6).";
+                else if(msg.includes("limit exceeded")) msg = "Limite de e-mails excedido. Tente mais tarde ou use Offline.";
+                showErrorToast(msg);
+            } finally {
+                btn.innerText = originalText;
+                btn.disabled = false;
+            }
+        }
+
+        function handleOffline() {
+            _isOffline = true;
+            state.isOfflineMode = true; // Salva a preferência
+            state.view = 'child';
+            render();
+        }
+
+        async function handleLogout() {
+            await _supabase.auth.signOut();
+            _user = null;
+            state.isOfflineMode = false; // Reseta preferencia
+            state.view = 'login';
+            render();
+        }
+
+        // --- LÓGICA DE TEMPO REAL E CONTROLE ---
         function startTask(id) {
             const task = state.routine.find(t => t.id === id);
             if (!task) return;
             playSound('click');
             state.activeTask = task;
+            const now = Date.now();
+            const durationMs = task.duration * 60 * 1000;
+            state.activeTaskEndTime = now + durationMs;
             timeLeft = task.duration * 60;
-            // Para testar a contagem regressiva, descomente a linha abaixo:
-            // timeLeft = 15; 
             isPaused = false;
             state.view = 'active-task';
-            if (timerInterval) clearInterval(timerInterval);
-            timerInterval = setInterval(() => {
-                if (!isPaused && timeLeft > 0) {
-                    timeLeft--;
-                    // Som de tick nos ultimos 10 segundos
-                    if (timeLeft <= 10) playSound('tick');
-                    renderActiveTask();
-                } else if (timeLeft === 0) {
-                    clearInterval(timerInterval);
-                    playSound('alarm');
-                    renderActiveTask();
-                }
-            }, 1000);
+            startInterval();
             render();
         }
 
-        // --- LÓGICA DE FALHA COM PROTEÇÃO EMOCIONAL ---
-        function failTask(applyPenalty = false) {
+        function startRewardTimer() {
+            const reward = state.rewards.find(r => r.id === pendingPurchaseId);
+            let minutes = 15; 
+            if (reward) { const match = reward.title.match(/(\d+)/); if (match) minutes = parseInt(match[0]); }
+            const rewardTask = { id: 'reward-timer', title: `Tempo: ${reward ? reward.title : 'Recompensa'}`, duration: minutes, icon: reward ? reward.icon : 'fa-clock', isRewardTimer: true };
+            playSound('click');
+            state.activeTask = rewardTask;
+            const now = Date.now();
+            state.activeTaskEndTime = now + (minutes * 60 * 1000);
+            timeLeft = minutes * 60;
+            isPaused = false;
+            hideOverlays();
+            closePurchaseModal();
+            state.view = 'active-task';
+            startInterval();
+            render();
+        }
+
+        function startInterval() {
             if (timerInterval) clearInterval(timerInterval);
-            
-            // Marca como completado (processado)
-            const taskIndex = state.routine.findIndex(t => t.id === state.activeTask.id);
-            if (taskIndex !== -1) state.routine[taskIndex].completed = true;
+            timerInterval = setInterval(() => {
+                if (isPaused) return;
+                const now = Date.now();
+                const diff = Math.ceil((state.activeTaskEndTime - now) / 1000);
+                if (diff <= 0) { timeLeft = 0; clearInterval(timerInterval); playSound('alarm'); renderActiveTask(); } 
+                else { timeLeft = diff; if (timeLeft <= 10) playSound('tick'); renderActiveTask(); }
+            }, 1000);
+        }
 
-            state.activeTask = null;
-            state.view = 'child';
+        function togglePause() { 
+            playSound('click'); 
+            isPaused = !isPaused; 
+            if (!isPaused) { state.activeTaskEndTime = Date.now() + (timeLeft * 1000); }
+            render(); 
+        }
 
-            if (applyPenalty) {
-                if (state.stars === 1) {
-                    // CASO ESPECIAL: Vai zerar as estrelas
-                    state.stars = 0;
-                    render();
-                    playSound('success'); // Som positivo para não frustrar
-                    document.getElementById('encouragement-overlay').classList.remove('hidden');
-                } else if (state.stars > 1) {
-                    // Penalidade normal
-                    state.stars--;
-                    render();
-                    playSound('error');
-                    document.getElementById('penalty-overlay').classList.remove('hidden');
+        function toggleTaskVisibility(id) {
+            const idx = state.routine.findIndex(t => t.id === id);
+            if (idx !== -1) { state.routine[idx].active = state.routine[idx].active === false ? true : false; saveData(); render(); }
+        }
+
+        // --- INTEGRAÇÃO GEMINI E HELPERS ---
+        async function callGemini(p){if(!apiKey){alert("Sem chave API");return null;}try{const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{text:p}]}]})});const d=await r.json();return d.candidates?.[0]?.content?.parts?.[0]?.text;}catch(e){console.error(e);return null;}}
+        function openAIModal(){document.getElementById('ai-modal').classList.remove('hidden');}
+        function closeAIModal(){document.getElementById('ai-modal').classList.add('hidden');}
+        
+        async function generateRoutineAI(){
+            const i=document.getElementById('ai-prompt').value;
+            const b=document.getElementById('btn-generate-ai');
+            if(!i.trim()) return alert("Digite algo!");
+            b.innerHTML='...'; b.disabled=true;
+            const p=`Crie uma rotina JSON válida (title,duration,icon fontawesome6) para: "${i}". Retorne APENAS o JSON puro, sem markdown.`;
+            const r=await callGemini(p);
+            b.innerHTML='Gerar'; b.disabled=false;
+            if(r){
+                try {
+                    // Remove markdown se houver
+                    const cleanJson = r.replace(/```json/g, '').replace(/```/g, '').trim();
+                    const j = JSON.parse(cleanJson);
+                    if(Array.isArray(j)){
+                        state.routine=[...state.routine,...j.map(t=>({id:Date.now()+Math.random(),title:t.title,duration:t.duration||15,icon:t.icon||'fa-star',completed:false,active:true}))];
+                        saveData(); closeAIModal(); render(); playSound('success');
+                    } else { alert("IA não retornou lista válida."); }
+                } catch(e) { console.error(e); alert("Erro ao processar IA."); }
+            } else { alert("Erro ao conectar IA."); }
+        }
+
+        function openAdviceModal(){document.getElementById('ai-advice-modal').classList.remove('hidden');}
+        function closeAdviceModal(){document.getElementById('ai-advice-modal').classList.add('hidden');}
+        async function getAdviceAI(){const i=document.getElementById('advice-prompt');const c=document.getElementById('advice-content');const q=i.value.trim();if(!q)return;c.innerHTML+=`<div class="mt-2 text-right text-blue-600">${q}</div>`;i.value='';const r=await callGemini(`Conselho curto positivo para pais sobre: "${q}"`);if(r)c.innerHTML+=`<div class="mt-2 text-left bg-green-50 p-2 rounded">${r}</div>`;}
+
+        // --- ACTIONS ---
+        function changeView(v) { playSound('click'); state.view=v; render(); }
+        function updateChildName(n) { state.childName=n; saveData(); }
+        function finishTask(s) { if(timerInterval)clearInterval(timerInterval); if(!state.activeTask.isRewardTimer){const idx=state.routine.findIndex(t=>t.id===state.activeTask.id); if(idx!==-1)state.routine[idx].completed=true;} state.activeTask=null; state.view='child'; if(s){state.stars++;render();playSound('success');document.getElementById('reward-overlay').classList.remove('hidden');}else{render();} }
+        function failTask(p) { if(timerInterval)clearInterval(timerInterval); if(!state.activeTask.isRewardTimer){const idx=state.routine.findIndex(t=>t.id===state.activeTask.id); if(idx!==-1)state.routine[idx].completed=true;} state.activeTask=null; state.view='child'; if(p){if(state.stars===1){state.stars=0;render();playSound('success');document.getElementById('encouragement-overlay').classList.remove('hidden');}else if(state.stars>1){state.stars--;render();playSound('error');document.getElementById('penalty-overlay').classList.remove('hidden');}else{render();document.getElementById('penalty-overlay').classList.remove('hidden');}}else{render();} }
+        function manualAdjustStars(a) { if(a<0&&state.stars<=0)return; state.stars+=a; render(); a>0?playSound('success'):playSound('error'); }
+        function hideOverlays() { document.querySelectorAll('[id$="-overlay"]').forEach(e=>e.classList.add('hidden')); }
+        function tryBuyReward(id) { const r=state.rewards.find(x=>x.id===id); if(!r)return; playSound('click'); if(state.stars>=r.cost){ pendingPurchaseId=id; document.getElementById('purchase-icon').className=`fa-solid ${r.icon}`; document.getElementById('purchase-title').innerText=r.title; document.getElementById('purchase-cost').innerText=r.cost; document.getElementById('purchase-confirm-modal').classList.remove('hidden'); }else{ const c=document.getElementById(`reward-card-${id}`); if(c){c.classList.remove('shake-trigger');void c.offsetWidth;c.classList.add('shake-trigger');} showErrorToast(`Faltam ${r.cost-state.stars} estrelas!`); playSound('error'); } }
+        function confirmPurchase() { if(!pendingPurchaseId)return; const r=state.rewards.find(x=>x.id===pendingPurchaseId); if(r&&state.stars>=r.cost){ state.stars-=r.cost; playSound('cash'); saveData(); closePurchaseModal(); render(); document.getElementById('redeem-success-overlay').classList.remove('hidden'); } }
+        function closePurchaseModal() { document.getElementById('purchase-confirm-modal').classList.add('hidden'); pendingPurchaseId=null; }
+        function showErrorToast(m) { const t=document.getElementById('error-toast'); document.getElementById('error-toast-msg').innerText=m; t.classList.remove('hidden'); t.classList.add('animate-bounce-in'); setTimeout(()=>t.classList.add('hidden'),2000); }
+        
+        // --- HELPER FUNCTIONS ---
+        function playSound(type) { if(!state.soundEnabled)return; if(audioCtx.state==='suspended')audioCtx.resume(); const o=audioCtx.createOscillator(); const g=audioCtx.createGain(); o.connect(g); g.connect(audioCtx.destination); const t=audioCtx.currentTime; if(type==='success'){o.frequency.setValueAtTime(523,t);o.frequency.linearRampToValueAtTime(784,t+0.2);g.gain.setValueAtTime(0.2,t);g.gain.linearRampToValueAtTime(0,t+0.4);o.start(t);o.stop(t+0.4);}else if(type==='error'){o.type='sawtooth';o.frequency.setValueAtTime(150,t);g.gain.setValueAtTime(0.2,t);g.gain.linearRampToValueAtTime(0,t+0.3);o.start(t);o.stop(t+0.3);}else if(type==='click'){o.type='triangle';o.frequency.setValueAtTime(400,t);g.gain.setValueAtTime(0.05,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.1);o.start(t);o.stop(t+0.1);}else if(type==='alarm'){o.type='square';o.frequency.setValueAtTime(440,t);g.gain.setValueAtTime(0.1,t);o.start(t);o.stop(t+0.5);}else if(type==='cash'){o.frequency.setValueAtTime(1200,t);o.frequency.linearRampToValueAtTime(2000,t+0.1);g.gain.setValueAtTime(0.2,t);g.gain.linearRampToValueAtTime(0,t+0.3);o.start(t);o.stop(t+0.3);}else if(type==='tick'){o.type='square';o.frequency.setValueAtTime(800,t);g.gain.setValueAtTime(0.05,t);o.start(t);o.stop(t+0.05);} }
+        function formatTime(s) { const m=Math.floor(s/60),sec=s%60; return `${m}:${sec<10?'0':''}${sec}`; }
+        function formatDuration(m) { return m>=60?`${Math.floor(m/60)}h${m%60>0?` ${m%60}m`:''}`:`${m} min`; }
+        function getFeelingEmoji(f) { const m={'Feliz':'😄','Tranquilo':'🙂','Cansado':'😫','Bravo':'😡','Triste':'😢'}; return m[f]||'😐'; }
+        
+        // --- CRUD ---
+        function openTaskModal(tid=null){ playSound('click'); editingTaskId=tid; const m=document.getElementById('task-modal'); const del=document.getElementById('btn-delete-task'); document.getElementById('icon-grid').innerHTML=AVAILABLE_ICONS.map(i=>`<div onclick="selectIcon('${i}')" class="icon-option w-10 h-10 rounded-lg flex items-center justify-center text-slate-500 cursor-pointer hover:bg-blue-100 border border-transparent"><i class="fa-solid ${i} text-lg"></i></div>`).join(''); if(tid){ const t=state.routine.find(x=>x.id===tid); document.getElementById('modal-title').innerText="Editar"; document.getElementById('edit-title').value=t.title; document.getElementById('edit-duration-range').value=t.duration; document.getElementById('edit-duration-display').innerText=t.duration; selectedIcon=t.icon; del.classList.remove('hidden'); }else{ document.getElementById('modal-title').innerText="Nova"; document.getElementById('edit-title').value=''; document.getElementById('edit-duration-range').value=30; document.getElementById('edit-duration-display').innerText=30; selectedIcon='fa-star'; del.classList.add('hidden'); } highlightSelectedIcon(); m.classList.remove('hidden'); }
+        function closeTaskModal(){ document.getElementById('task-modal').classList.add('hidden'); }
+        function syncDuration(v){ document.getElementById('edit-duration-display').innerText=v; }
+        function selectIcon(i){ selectedIcon=i; highlightSelectedIcon(); }
+        function highlightSelectedIcon(){ document.querySelectorAll('#icon-grid .icon-option').forEach(el=>{ const i=el.querySelector('i'); el.className=i.classList.contains(selectedIcon)?'icon-option w-10 h-10 rounded-lg flex items-center justify-center text-white bg-blue-500 scale-110 shadow-md':'icon-option w-10 h-10 rounded-lg flex items-center justify-center text-slate-400 bg-slate-50'; }); }
+        function saveTask(){ const t=document.getElementById('edit-title').value.trim(); const d=parseInt(document.getElementById('edit-duration-range').value); if(!t)return alert("Nome?"); if(editingTaskId){ const idx=state.routine.findIndex(x=>x.id===editingTaskId); if(idx!==-1)state.routine[idx]={...state.routine[idx],title:t,duration:d,icon:selectedIcon}; }else{ state.routine.push({id:Date.now(),title:t,duration:d,icon:selectedIcon,completed:false,active:true}); } playSound('success'); closeTaskModal(); render(); }
+        function deleteCurrentTask(){ if(confirm("Apagar?")){ state.routine=state.routine.filter(x=>x.id!==editingTaskId); closeTaskModal(); render(); } }
+        function openRewardModal(rid=null){ playSound('click'); editingRewardId=rid; const m=document.getElementById('reward-modal'); const del=document.getElementById('btn-delete-reward'); document.getElementById('reward-icon-grid').innerHTML=AVAILABLE_ICONS.map(i=>`<div onclick="selectRewardIcon('${i}')" class="reward-icon-option w-10 h-10 rounded-lg flex items-center justify-center text-slate-500 cursor-pointer hover:bg-yellow-100 border border-transparent"><i class="fa-solid ${i} text-lg"></i></div>`).join(''); if(rid){ const r=state.rewards.find(x=>x.id===rid); document.getElementById('reward-modal-title').innerText="Editar"; document.getElementById('reward-title').value=r.title; document.getElementById('reward-cost-range').value=r.cost; document.getElementById('reward-cost-display').innerHTML=`${r.cost} <i class="fa-solid fa-star text-xs"></i>`; selectedIcon=r.icon; del.classList.remove('hidden'); }else{ document.getElementById('reward-modal-title').innerText="Novo"; document.getElementById('reward-title').value=''; document.getElementById('reward-cost-range').value=5; document.getElementById('reward-cost-display').innerHTML=`5 <i class="fa-solid fa-star text-xs"></i>`; selectedIcon='fa-gift'; del.classList.add('hidden'); } highlightSelectedRewardIcon(); m.classList.remove('hidden'); }
+        function closeRewardModal(){ document.getElementById('reward-modal').classList.add('hidden'); }
+        function syncCost(v){ document.getElementById('reward-cost-display').innerHTML=`${v} <i class="fa-solid fa-star text-xs"></i>`; }
+        function selectRewardIcon(i){ selectedIcon=i; highlightSelectedRewardIcon(); }
+        function highlightSelectedRewardIcon(){ document.querySelectorAll('.reward-icon-option').forEach(el=>{ const i=el.querySelector('i'); el.className=i.classList.contains(selectedIcon)?'reward-icon-option w-10 h-10 rounded-lg flex items-center justify-center text-slate-900 bg-yellow-400 scale-110 shadow-md':'reward-icon-option w-10 h-10 rounded-lg flex items-center justify-center text-slate-400 bg-slate-50'; }); }
+        function saveReward(){ const t=document.getElementById('reward-title').value.trim(); const c=parseInt(document.getElementById('reward-cost-range').value); if(!t)return alert("Nome?"); if(editingRewardId){ const idx=state.rewards.findIndex(r=>r.id===editingRewardId); if(idx!==-1)state.rewards[idx]={...state.rewards[idx],title:t,cost:c,icon:selectedIcon}; }else{ state.rewards.push({id:Date.now(),title:t,cost:c,icon:selectedIcon}); } playSound('success'); closeRewardModal(); render(); }
+        function deleteCurrentReward(){ if(confirm("Apagar?")){ state.rewards=state.rewards.filter(r=>r.id!==editingRewardId); closeRewardModal(); render(); } }
+        function resetDay(){ if(!confirm("Reiniciar dia?"))return; state.routine.forEach(t=>t.completed=false); state.currentFeeling=null; state.view='child'; playSound('click'); render(); }
+        function setTheme(t){ state.theme=t; playSound('click'); render(); }
+        function selectFeeling(f){ state.currentFeeling=f; playSound('success'); setTimeout(()=>changeView('child'),500); }
+        function clearFeeling(){ state.currentFeeling=null; render(); }
+
+        // --- INIT ---
+        async function initApp() {
+            const loadingText = document.getElementById('loading-text');
+            const statusIndicator = document.getElementById('status-indicator');
+            try {
+                // Tenta recuperar sessão existente
+                const { data } = await _supabase.auth.getSession();
+                
+                if (data.session) {
+                    // Sessão existe (Login persistente funcionou)
+                    _user = data.session.user;
+                    loadingText.innerText = "Sincronizando...";
+                    statusIndicator.innerHTML = '<i class="fa-solid fa-cloud text-green-400"></i> Online';
+                    statusIndicator.classList.remove('opacity-50');
+                    state.view = 'child'; 
+                    state.isOfflineMode = false;
+                    await loadFromSupabase();
                 } else {
-                    // Já estava com 0
-                    render();
-                    document.getElementById('penalty-overlay').classList.remove('hidden');
+                    // Sem sessão Supabase.
+                    // Verifica se o usuário escolheu usar Offline anteriormente
+                    if (state.isOfflineMode) {
+                         _isOffline = true;
+                         statusIndicator.innerHTML = '<i class="fa-solid fa-laptop text-slate-500"></i> Salvo no PC';
+                         statusIndicator.classList.remove('opacity-50');
+                         if(state.view === 'login') state.view = 'child';
+                    } else {
+                        // Se não tem sessão e não é offline, manda pro login
+                        state.view = 'login';
+                    }
                 }
-            } else {
+            } catch (err) {
+                console.error("Erro init:", err);
+                // Fallback para modo offline em caso de erro de rede
+                _isOffline = true;
+                statusIndicator.innerHTML = '<i class="fa-solid fa-laptop text-slate-500"></i> Salvo no PC (Erro Conexão)';
+                statusIndicator.classList.remove('opacity-50');
+                if(state.view === 'login') state.view = 'child';
+            } finally {
+                document.getElementById('loading-screen').style.display = 'none';
+                document.getElementById('app-container').classList.remove('hidden');
                 render();
             }
         }
 
-        function manualAdjustStars(amt) {
-            if (amt < 0) {
-                if (state.stars === 1) {
-                    // Proteção emocional também no ajuste manual?
-                    // Pode ser confuso para o pai, então manteremos comportamento padrão no painel pai,
-                    // ou podemos aplicar a mesma lógica. Vamos manter o padrão simples no painel pai.
-                    state.stars = 0;
-                    render();
-                    playSound('error');
-                    return;
-                }
-                if (state.stars <= 0) return;
+        async function loadFromSupabase() {
+            if (!_user || _isOffline) return;
+            const { data } = await _supabase.from('user_data').select('content').eq('id', _user.id).single();
+            if (data && data.content) { state = { ...state, ...data.content }; if (!state.rewards) state.rewards = DEFAULT_REWARDS; } else saveToSupabaseNow();
+        }
+
+        let saveTimeout;
+        function saveData() {
+            localStorage.setItem('minhaRotinaData_v11.2_estrelinha', JSON.stringify(state));
+            if (_isOffline || !_user) {
+                const indicator = document.getElementById('status-indicator');
+                if(indicator) indicator.innerHTML = '<i class="fa-solid fa-laptop text-slate-500"></i> Salvo no PC';
+                return;
             }
-            state.stars += amt;
-            render();
-            amt > 0 ? playSound('success') : playSound('error');
+            const indicator = document.getElementById('status-indicator');
+            if(indicator) indicator.innerHTML = '<i class="fa-solid fa-cloud-arrow-up text-blue-400 animate-pulse"></i> Salvando...';
+            clearTimeout(saveTimeout);
+            saveTimeout = setTimeout(async () => { await saveToSupabaseNow(); if(indicator) indicator.innerHTML = '<i class="fa-solid fa-cloud text-green-400"></i> Online'; }, 1000);
         }
 
-        // ... (Funções de Loja e outras mantidas) ...
-        function tryBuyReward(id) {
-            const reward = state.rewards.find(r => r.id === id); if (!reward) return; playSound('click');
-            if (state.stars >= reward.cost) { pendingPurchaseId = id; document.getElementById('purchase-icon').className = `fa-solid ${reward.icon}`; document.getElementById('purchase-title').innerText = reward.title; document.getElementById('purchase-cost').innerText = reward.cost; document.getElementById('purchase-confirm-modal').classList.remove('hidden'); } 
-            else { const card = document.getElementById(`reward-card-${id}`); if(card) { card.classList.remove('shake-trigger'); void card.offsetWidth; card.classList.add('shake-trigger'); } showErrorToast(`Faltam ${reward.cost - state.stars} estrelas!`); playSound('error'); }
+        async function saveToSupabaseNow() {
+            if (!_user || _isOffline) return;
+            const dataToSave = { view: state.view, theme: state.theme, childName: state.childName, stars: state.stars, soundEnabled: state.soundEnabled, currentFeeling: state.currentFeeling, routine: state.routine, rewards: state.rewards };
+            await _supabase.from('user_data').upsert({ id: _user.id, content: dataToSave });
         }
-        function confirmPurchase() { if (!pendingPurchaseId) return; const reward = state.rewards.find(r => r.id === pendingPurchaseId); if (reward && state.stars >= reward.cost) { state.stars -= reward.cost; playSound('cash'); saveData(); closePurchaseModal(); render(); document.getElementById('redeem-success-overlay').classList.remove('hidden'); } }
-        function closePurchaseModal() { document.getElementById('purchase-confirm-modal').classList.add('hidden'); pendingPurchaseId = null; }
-        function showErrorToast(msg) { const toast = document.getElementById('error-toast'); document.getElementById('error-toast-msg').innerText = msg; toast.classList.remove('hidden'); toast.classList.add('animate-bounce-in'); setTimeout(() => { toast.classList.add('hidden'); }, 2000); }
-        function renderParentDashboard(){let html=`<div class="flex flex-col h-full bg-slate-50"><header class="bg-white p-4 shadow-sm flex items-center gap-3 border-b border-slate-100 sticky top-0 z-20"><button onclick="changeView('child')" class="p-2 hover:bg-slate-100 rounded-full text-slate-500 transition"><i class="fa-solid fa-arrow-left text-xl"></i></button><h1 class="text-xl font-bold text-slate-800">Área dos Pais</h1></header><div class="flex-1 overflow-y-auto p-5 space-y-8"><section class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200"><h2 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4 text-center">Gestão de Comportamento</h2><div class="flex items-center justify-between gap-4"><button onclick="manualAdjustStars(-1)" class="w-16 h-16 rounded-2xl bg-red-50 text-red-500 border border-red-100 flex items-center justify-center text-3xl shadow-sm active:scale-95 transition hover:bg-red-100"><i class="fa-solid fa-minus"></i></button><div class="flex flex-col items-center"><div class="text-5xl font-bold text-yellow-500 flex items-center gap-2">${state.stars} <i class="fa-solid fa-star text-3xl"></i></div><span class="text-xs text-slate-400 mt-1">Saldo Atual</span></div><button onclick="manualAdjustStars(1)" class="w-16 h-16 rounded-2xl bg-green-50 text-green-500 border border-green-100 flex items-center justify-center text-3xl shadow-sm active:scale-95 transition hover:bg-green-100"><i class="fa-solid fa-plus"></i></button></div></section><section><label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 ml-1">Criança</label><div class="bg-white p-2 rounded-xl shadow-sm border border-slate-200"><input type="text" value="${state.childName}" oninput="updateChildName(this.value)" placeholder="Nome da Criança" class="w-full bg-transparent p-2 outline-none text-slate-700 font-bold"></div></section><section><h2 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 ml-1">Tema</h2><div class="grid grid-cols-4 gap-2">${renderThemeButton('theme-blue', 'bg-blue-500')}${renderThemeButton('theme-green', 'bg-green-500')}${renderThemeButton('theme-purple', 'bg-purple-500')}${renderThemeButton('theme-dark', 'bg-slate-800')}</div></section><section><div class="flex justify-between items-end mb-3 ml-1"><h2 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Rotina Diária</h2><button onclick="resetDay()" class="text-xs text-red-400 hover:text-red-600 font-medium">Resetar Dia</button></div><div class="bg-white rounded-2xl shadow-sm border border-slate-200 divide-y divide-slate-100">${state.routine.map(task => `<div class="p-4 flex items-center gap-3 hover:bg-slate-50 transition"><div class="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center text-slate-500"><i class="fa-solid ${task.icon}"></i></div><div class="flex-1 min-w-0"><div class="font-bold text-slate-700 truncate">${task.title}</div><div class="text-xs text-slate-400">${task.duration} min</div></div><button onclick="openTaskModal(${task.id})" class="p-2 text-blue-400 hover:bg-blue-50 rounded-lg"><i class="fa-solid fa-pen"></i></button></div>`).join('')}<button onclick="openTaskModal()" class="w-full p-4 text-center text-blue-500 font-bold hover:bg-blue-50 transition rounded-b-2xl"><i class="fa-solid fa-plus-circle"></i> Adicionar</button></div></section><section><div class="flex justify-between items-end mb-3 ml-1"><h2 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Loja de Recompensas</h2></div><div class="bg-white rounded-2xl shadow-sm border border-slate-200 divide-y divide-slate-100">${state.rewards.map(reward => `<div class="p-4 flex items-center gap-3 hover:bg-slate-50 transition"><div class="w-10 h-10 rounded-lg bg-yellow-50 flex items-center justify-center text-yellow-600"><i class="fa-solid ${reward.icon}"></i></div><div class="flex-1 min-w-0"><div class="font-bold text-slate-700 truncate">${reward.title}</div><div class="text-xs text-yellow-600 font-bold flex items-center gap-1">${reward.cost} <i class="fa-solid fa-star text-[10px]"></i></div></div><button onclick="openRewardModal(${reward.id})" class="p-2 text-blue-400 hover:bg-blue-50 rounded-lg"><i class="fa-solid fa-pen"></i></button></div>`).join('')}<button onclick="openRewardModal()" class="w-full p-4 text-center text-yellow-600 font-bold hover:bg-yellow-50 transition rounded-b-2xl"><i class="fa-solid fa-plus-circle"></i> Adicionar Prêmio</button></div></section></div></div>`; mainContent.innerHTML=html;}
-        function renderThemeButton(t, c) { return `<button onclick="setTheme('${t}')" class="h-12 rounded-xl border-2 ${state.theme===t ? 'border-slate-800 scale-95':'border-transparent'} ${c} shadow-sm transition-transform"></button>`; }
-        function renderFeelingsCheckin() { const feelings = [{id:'Feliz',icon:'fa-face-laugh-beam',color:'text-green-500',bg:'bg-green-100'},{id:'Tranquilo',icon:'fa-face-smile',color:'text-blue-500',bg:'bg-blue-100'},{id:'Cansado',icon:'fa-face-tired',color:'text-purple-500',bg:'bg-purple-100'},{id:'Bravo',icon:'fa-face-angry',color:'text-red-500',bg:'bg-red-100'},{id:'Triste',icon:'fa-face-sad-tear',color:'text-blue-300',bg:'bg-blue-50'}]; let html = `<div class="flex flex-col h-full bg-white p-6 relative"><button onclick="changeView('child')" class="absolute top-6 left-6 w-10 h-10 flex items-center justify-center bg-slate-100 rounded-full hover:bg-slate-200 transition"><i class="fa-solid fa-arrow-left text-slate-600"></i></button><div class="flex-1 flex flex-col items-center justify-center pt-10"><h2 class="text-2xl font-bold text-slate-700 mb-8 text-center">Como você está?</h2><div class="grid grid-cols-2 gap-4 w-full">${feelings.map(f => `<button onclick="selectFeeling('${f.id}')" class="p-4 rounded-2xl ${f.bg} flex flex-col items-center gap-3 transition transform hover:scale-105 active:scale-95"><i class="fa-solid ${f.icon} text-4xl ${f.color}"></i><span class="font-bold text-slate-700">${f.id}</span></button>`).join('')}</div></div></div>`; mainContent.innerHTML = html; }
-        
-        function changeView(v) { playSound('click'); state.view = v; render(); }
-        function updateChildName(n) { state.childName = n; saveData(); }
-        function togglePause() { playSound('click'); isPaused = !isPaused; render(); }
-        function finishTask(success) { if (timerInterval) clearInterval(timerInterval); const taskIndex = state.routine.findIndex(t => t.id === state.activeTask.id); if (taskIndex !== -1) state.routine[taskIndex].completed = true; state.activeTask = null; state.view = 'child'; if (success) { state.stars++; render(); playSound('success'); document.getElementById('reward-overlay').classList.remove('hidden'); } else { render(); } }
-        function hideOverlays() { document.querySelectorAll('[id$="-overlay"]').forEach(el => el.classList.add('hidden')); }
-        function openTaskModal(tid=null){playSound('click');editingTaskId=tid;const modal=document.getElementById('task-modal');const delBtn=document.getElementById('btn-delete-task');document.getElementById('icon-grid').innerHTML=AVAILABLE_ICONS.map(i=>`<div onclick="selectIcon('${i}')" class="icon-option w-10 h-10 rounded-lg flex items-center justify-center text-slate-500 cursor-pointer hover:bg-blue-100 border border-transparent"><i class="fa-solid ${i} text-lg"></i></div>`).join('');if(tid){const t=state.routine.find(x=>x.id===tid);document.getElementById('modal-title').innerText="Editar";document.getElementById('edit-title').value=t.title;document.getElementById('edit-duration-range').value=t.duration;document.getElementById('edit-duration-display').innerText=t.duration;selectedIcon=t.icon;delBtn.classList.remove('hidden');}else{document.getElementById('modal-title').innerText="Nova";document.getElementById('edit-title').value='';document.getElementById('edit-duration-range').value=30;document.getElementById('edit-duration-display').innerText=30;selectedIcon='fa-star';delBtn.classList.add('hidden');}highlightSelectedIcon();modal.classList.remove('hidden');}
-        function closeTaskModal(){document.getElementById('task-modal').classList.add('hidden');}
-        function syncDuration(v){document.getElementById('edit-duration-display').innerText=v;}
-        function selectIcon(i){selectedIcon=i;highlightSelectedIcon();}
-        function highlightSelectedIcon(){document.querySelectorAll('#icon-grid .icon-option').forEach(el=>{const i=el.querySelector('i');el.className=i.classList.contains(selectedIcon)?'icon-option w-10 h-10 rounded-lg flex items-center justify-center text-white bg-blue-500 scale-110 shadow-md':'icon-option w-10 h-10 rounded-lg flex items-center justify-center text-slate-400 bg-slate-50';});}
-        function saveTask(){const title=document.getElementById('edit-title').value.trim();const dur=parseInt(document.getElementById('edit-duration-range').value);if(!title)return alert("Digite um nome!");if(editingTaskId){const idx=state.routine.findIndex(t=>t.id===editingTaskId);if(idx!==-1)state.routine[idx]={...state.routine[idx],title,duration:dur,icon:selectedIcon};}else state.routine.push({id:Date.now(),title,duration:dur,icon:selectedIcon,completed:false});playSound('success');closeTaskModal();render();}
-        function deleteCurrentTask(){if(confirm("Apagar atividade?")){state.routine=state.routine.filter(t=>t.id!==editingTaskId);closeTaskModal();render();}}
-        function openRewardModal(rid=null){playSound('click');editingRewardId=rid;const modal=document.getElementById('reward-modal');const delBtn=document.getElementById('btn-delete-reward');document.getElementById('reward-icon-grid').innerHTML=AVAILABLE_ICONS.map(i=>`<div onclick="selectRewardIcon('${i}')" class="reward-icon-option w-10 h-10 rounded-lg flex items-center justify-center text-slate-500 cursor-pointer hover:bg-yellow-100 border border-transparent"><i class="fa-solid ${i} text-lg"></i></div>`).join('');if(rid){const r=state.rewards.find(x=>x.id===rid);document.getElementById('reward-modal-title').innerText="Editar Prêmio";document.getElementById('reward-title').value=r.title;document.getElementById('reward-cost-range').value=r.cost;document.getElementById('reward-cost-display').innerHTML=`${r.cost} <i class="fa-solid fa-star text-xs"></i>`;selectedIcon=r.icon;delBtn.classList.remove('hidden');}else{document.getElementById('reward-modal-title').innerText="Novo Prêmio";document.getElementById('reward-title').value='';document.getElementById('reward-cost-range').value=5;document.getElementById('reward-cost-display').innerHTML=`5 <i class="fa-solid fa-star text-xs"></i>`;selectedIcon='fa-gift';delBtn.classList.add('hidden');}highlightSelectedRewardIcon();modal.classList.remove('hidden');}
-        function closeRewardModal(){document.getElementById('reward-modal').classList.add('hidden');}
-        function syncCost(v){document.getElementById('reward-cost-display').innerHTML=`${v} <i class="fa-solid fa-star text-xs"></i>`;}
-        function selectRewardIcon(i){selectedIcon=i;highlightSelectedRewardIcon();}
-        function highlightSelectedRewardIcon(){document.querySelectorAll('.reward-icon-option').forEach(el=>{const i=el.querySelector('i');el.className=i.classList.contains(selectedIcon)?'reward-icon-option w-10 h-10 rounded-lg flex items-center justify-center text-slate-900 bg-yellow-400 scale-110 shadow-md':'reward-icon-option w-10 h-10 rounded-lg flex items-center justify-center text-slate-400 bg-slate-50';});}
-        function saveReward(){const title=document.getElementById('reward-title').value.trim();const cost=parseInt(document.getElementById('reward-cost-range').value);if(!title)return alert("Digite um nome!");if(editingRewardId){const idx=state.rewards.findIndex(r=>r.id===editingRewardId);if(idx!==-1)state.rewards[idx]={...state.rewards[idx],title,cost,icon:selectedIcon};}else state.rewards.push({id:Date.now(),title,cost,icon:selectedIcon});playSound('success');closeRewardModal();render();}
-        function deleteCurrentReward(){if(confirm("Apagar prêmio?")){state.rewards=state.rewards.filter(r=>r.id!==editingRewardId);closeRewardModal();render();}}
-        function resetDay(){if(!confirm("Iniciar novo dia e limpar tarefas?"))return;state.routine.forEach(t=>t.completed=false);state.currentFeeling=null;state.view='child';playSound('click');render();}
-        function setTheme(t){state.theme=t;playSound('click');render();}
-        function selectFeeling(f){state.currentFeeling=f;playSound('success');setTimeout(()=>changeView('child'),500);}
-        function clearFeeling(){state.currentFeeling=null;render();}
-        function getFeelingEmoji(f){const m={'Feliz':'😄','Tranquilo':'🙂','Cansado':'😫','Bravo':'😡','Triste':'😢'};return m[f]||'😐';}
-        function formatTime(s){const m=Math.floor(s/60),sec=s%60;return `${m}:${sec<10?'0':''}${sec}`;}
-        function formatDuration(m){return m>=60?`${Math.floor(m/60)}h${m%60>0?` ${m%60}m`:''}`:`${m} min`;}
 
-        window.onload = async function() { 
-            await loadDataFromSupabase();
-            render(); 
-        };
+        window.onload = initApp;
     </script>
 </body>
 </html>
