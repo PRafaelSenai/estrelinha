@@ -14,7 +14,7 @@
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; overscroll-behavior: none; user-select: none; -webkit-tap-highlight-color: transparent; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; overscroll-behavior: none; user-select: none; -webkit-tap-highlight-color: transparent; background-color: #f1f5f9; }
         @keyframes bounce-in { 0% { transform: scale(0.3); opacity: 0; } 50% { transform: scale(1.05); } 100% { transform: scale(1); opacity: 1; } }
         @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
         @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-10px); } 100% { transform: translateY(0px); } }
@@ -31,11 +31,25 @@
         .theme-green { --bg-primary: #f0fdf4; --text-primary: #14532d; --accent: #22c55e; --accent-light: #dcfce7; }
         .theme-purple { --bg-primary: #faf5ff; --text-primary: #4c1d95; --accent: #a855f7; --accent-light: #f3e8ff; }
         .theme-dark { --bg-primary: #0f172a; --text-primary: #f1f5f9; --accent: #6366f1; --accent-light: #1e293b; }
-        #app-container { background-color: var(--bg-primary); color: var(--text-primary); transition: background-color 0.5s, color 0.5s; }
+        
+        /* Ajuste de responsividade: Em telas grandes, o app flutua no centro. Em mobile, ocupa tudo */
+        #app-container { 
+            background-color: var(--bg-primary); 
+            color: var(--text-primary); 
+            transition: background-color 0.5s, color 0.5s; 
+            box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+        }
+        @media (min-width: 640px) {
+            #app-container {
+                height: 95vh;
+                margin-top: 2.5vh;
+                border-radius: 2rem;
+            }
+        }
+
         .shake-trigger { animation: shake 0.4s ease-in-out; }
         #loading-screen { position: fixed; inset: 0; background: white; z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         .text-gradient-ai { background: linear-gradient(to right, #3b82f6, #8b5cf6, #ec4899); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        /* Custom scrollbar for icons */
         .icon-grid-scroll::-webkit-scrollbar { width: 4px; }
         .icon-grid-scroll::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 4px; }
     </style>
@@ -50,7 +64,7 @@
     </div>
 
     <!-- Container Principal -->
-    <div id="app-container" class="theme-blue w-full h-screen max-w-md mx-auto flex flex-col relative overflow-hidden sm:border-x sm:border-slate-200 shadow-2xl hidden">
+    <div id="app-container" class="theme-blue w-full h-full sm:h-[95vh] sm:max-w-md mx-auto flex flex-col relative overflow-hidden sm:border-x sm:border-slate-200 shadow-2xl hidden">
         
         <!-- Conteúdo dinâmico -->
         <div id="main-content" class="flex-1 flex flex-col h-full overflow-hidden relative"></div>
@@ -60,9 +74,9 @@
             <i class="fa-solid fa-cloud"></i> Verificando...
         </div>
 
-        <!-- OVERLAYS (Mantidos) -->
-        <div id="reward-overlay" class="hidden absolute inset-0 bg-black/60 z-50 flex items-center justify-center backdrop-blur-sm">
-            <div class="bg-white p-8 rounded-3xl text-center shadow-2xl animate-bounce-in transform scale-110 w-80 border-4 border-yellow-300">
+        <!-- OVERLAYS (Responsivos) -->
+        <div id="reward-overlay" class="hidden absolute inset-0 bg-black/60 z-50 flex items-center justify-center backdrop-blur-sm p-4">
+            <div class="bg-white p-8 rounded-3xl text-center shadow-2xl animate-bounce-in w-full max-w-xs border-4 border-yellow-300">
                 <i class="fa-solid fa-star text-yellow-400 text-7xl mb-4 animate-spin-custom" style="animation-duration: 3s; filter: drop-shadow(0 0 10px gold);"></i>
                 <h2 class="text-3xl font-bold text-slate-800 mb-2">Muito Bem!</h2>
                 <p class="text-slate-500 text-lg">+1 Estrelinha</p>
@@ -70,8 +84,8 @@
             </div>
         </div>
 
-        <div id="penalty-overlay" class="hidden absolute inset-0 bg-black/60 z-50 flex items-center justify-center backdrop-blur-sm">
-            <div class="bg-white p-8 rounded-3xl text-center shadow-2xl animate-shake w-80 border-4 border-red-300">
+        <div id="penalty-overlay" class="hidden absolute inset-0 bg-black/60 z-50 flex items-center justify-center backdrop-blur-sm p-4">
+            <div class="bg-white p-8 rounded-3xl text-center shadow-2xl animate-shake w-full max-w-xs border-4 border-red-300">
                 <div class="relative w-20 h-20 mx-auto mb-4"><i class="fa-solid fa-star text-slate-300 text-7xl"></i><i class="fa-solid fa-slash text-red-500 text-7xl absolute inset-0 opacity-80"></i></div>
                 <h2 class="text-2xl font-bold text-red-500 mb-2">Poxa vida...</h2>
                 <p class="text-slate-600 font-bold text-lg mb-1">-1 Estrelinha</p>
@@ -79,8 +93,8 @@
             </div>
         </div>
 
-        <div id="encouragement-overlay" class="hidden absolute inset-0 bg-black/60 z-50 flex items-center justify-center backdrop-blur-sm">
-            <div class="bg-white p-8 rounded-3xl text-center shadow-2xl animate-bounce-in w-80 border-4 border-blue-300">
+        <div id="encouragement-overlay" class="hidden absolute inset-0 bg-black/60 z-50 flex items-center justify-center backdrop-blur-sm p-4">
+            <div class="bg-white p-8 rounded-3xl text-center shadow-2xl animate-bounce-in w-full max-w-xs border-4 border-blue-300">
                 <div class="relative w-24 h-24 mx-auto mb-4 bg-blue-100 rounded-full flex items-center justify-center"><i class="fa-solid fa-hand-holding-heart text-blue-500 text-5xl"></i></div>
                 <h2 class="text-2xl font-bold text-blue-600 mb-2">Não desanime!</h2>
                 <p class="text-slate-600 text-lg mb-4">Vamos recomeçar.</p>
@@ -88,8 +102,8 @@
             </div>
         </div>
 
-        <div id="purchase-confirm-modal" class="hidden absolute inset-0 bg-black/60 z-50 flex items-center justify-center backdrop-blur-sm">
-            <div class="bg-white w-80 rounded-3xl p-6 shadow-2xl animate-bounce-in flex flex-col items-center text-center">
+        <div id="purchase-confirm-modal" class="hidden absolute inset-0 bg-black/60 z-50 flex items-center justify-center backdrop-blur-sm p-4">
+            <div class="bg-white w-full max-w-xs rounded-3xl p-6 shadow-2xl animate-bounce-in flex flex-col items-center text-center">
                 <div class="w-20 h-20 bg-yellow-100 rounded-full flex items-center justify-center mb-4 text-yellow-500 text-4xl"><i id="purchase-icon" class="fa-solid fa-gift"></i></div>
                 <h2 class="text-xl font-bold text-slate-800 mb-2">Comprar este prêmio?</h2>
                 <p id="purchase-title" class="text-lg text-slate-600 font-medium mb-1">Nome</p>
@@ -105,8 +119,8 @@
         </div>
 
         <!-- SUCESSO DE COMPRA -->
-        <div id="redeem-success-overlay" class="hidden absolute inset-0 bg-black/60 z-50 flex items-center justify-center backdrop-blur-sm">
-            <div class="bg-white p-6 rounded-3xl text-center shadow-2xl animate-bounce-in w-80 border-4 border-green-400 relative overflow-hidden">
+        <div id="redeem-success-overlay" class="hidden absolute inset-0 bg-black/60 z-50 flex items-center justify-center backdrop-blur-sm p-4">
+            <div class="bg-white p-6 rounded-3xl text-center shadow-2xl animate-bounce-in w-full max-w-xs border-4 border-green-400 relative overflow-hidden">
                 <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-red-400 via-yellow-400 to-blue-400"></div>
                 <div class="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 mt-2"><i class="fa-solid fa-check text-green-500 text-5xl"></i></div>
                 <h2 class="text-2xl font-bold text-slate-800 mb-2">Comprado!</h2>
@@ -127,8 +141,8 @@
         </div>
 
         <!-- Modais de Edição -->
-        <div id="task-modal" class="hidden absolute inset-0 bg-black/50 z-40 flex items-end sm:items-center justify-center backdrop-blur-sm">
-            <div class="bg-white w-full sm:w-11/12 sm:rounded-3xl rounded-t-3xl p-6 shadow-2xl animate-slide-up h-[85vh] sm:h-auto flex flex-col">
+        <div id="task-modal" class="hidden absolute inset-0 bg-black/50 z-40 flex items-end sm:items-center justify-center backdrop-blur-sm p-4">
+            <div class="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl animate-slide-up max-h-[90vh] flex flex-col">
                 <div class="flex justify-between items-center mb-6"><h2 class="text-xl font-bold text-slate-800" id="modal-title">Editar Atividade</h2><button onclick="closeTaskModal()" class="p-2 bg-slate-100 rounded-full text-slate-500 hover:bg-slate-200"><i class="fa-solid fa-times"></i></button></div>
                 <div class="flex-1 overflow-y-auto space-y-4 pr-2">
                     <div><label class="block text-sm font-bold text-slate-500 mb-1">Nome</label><input type="text" id="edit-title" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 font-medium outline-none"></div>
@@ -139,8 +153,8 @@
             </div>
         </div>
 
-        <div id="reward-modal" class="hidden absolute inset-0 bg-black/50 z-40 flex items-end sm:items-center justify-center backdrop-blur-sm">
-            <div class="bg-white w-full sm:w-11/12 sm:rounded-3xl rounded-t-3xl p-6 shadow-2xl animate-slide-up h-[85vh] sm:h-auto flex flex-col">
+        <div id="reward-modal" class="hidden absolute inset-0 bg-black/50 z-40 flex items-end sm:items-center justify-center backdrop-blur-sm p-4">
+            <div class="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl animate-slide-up max-h-[90vh] flex flex-col">
                 <div class="flex justify-between items-center mb-6"><h2 class="text-xl font-bold text-slate-800" id="reward-modal-title">Editar Prêmio</h2><button onclick="closeRewardModal()" class="p-2 bg-slate-100 rounded-full text-slate-500 hover:bg-slate-200"><i class="fa-solid fa-times"></i></button></div>
                 <div class="flex-1 overflow-y-auto space-y-4 pr-2">
                     <div><label class="block text-sm font-bold text-slate-500 mb-1">Nome</label><input type="text" id="reward-title" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 font-medium outline-none"></div>
@@ -154,8 +168,8 @@
         </div>
 
         <!-- AI Modals -->
-        <div id="ai-modal" class="hidden absolute inset-0 bg-black/60 z-50 flex items-center justify-center backdrop-blur-sm">
-            <div class="bg-white w-80 rounded-3xl p-6 shadow-2xl animate-bounce-in flex flex-col">
+        <div id="ai-modal" class="hidden absolute inset-0 bg-black/60 z-50 flex items-center justify-center backdrop-blur-sm p-4">
+            <div class="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl animate-bounce-in flex flex-col">
                 <div class="flex justify-between items-center mb-4"><h2 class="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-purple-500"><i class="fa-solid fa-wand-magic-sparkles mr-2"></i>Criar com IA</h2><button onclick="closeAIModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-times"></i></button></div>
                 <p class="text-sm text-slate-500 mb-4">Descreva a rotina que deseja e a IA criará as tarefas para você.</p>
                 <textarea id="ai-prompt" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 mb-4 h-24 text-sm focus:ring-2 focus:ring-purple-400 outline-none resize-none" placeholder="Ex: Rotina da manhã..."></textarea>
@@ -163,8 +177,8 @@
             </div>
         </div>
 
-        <div id="ai-advice-modal" class="hidden absolute inset-0 bg-black/60 z-50 flex items-center justify-center backdrop-blur-sm">
-            <div class="bg-white w-80 rounded-3xl p-6 shadow-2xl animate-bounce-in flex flex-col h-[60vh]">
+        <div id="ai-advice-modal" class="hidden absolute inset-0 bg-black/60 z-50 flex items-center justify-center backdrop-blur-sm p-4">
+            <div class="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl animate-bounce-in flex flex-col h-[60vh]">
                 <div class="flex justify-between items-center mb-4 border-b pb-2"><h2 class="text-lg font-bold text-slate-700 flex items-center gap-2"><i class="fa-solid fa-user-doctor text-green-500"></i> Conselheiro</h2><button onclick="closeAdviceModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-times"></i></button></div>
                 <div id="advice-content" class="flex-1 overflow-y-auto text-sm text-slate-600 leading-relaxed mb-4 p-2 bg-slate-50 rounded-xl">Olá! Sou seu assistente de apoio. Digite abaixo sua dúvida.</div>
                 <div class="flex gap-2"><input type="text" id="advice-prompt" class="flex-1 bg-white border border-slate-200 rounded-xl px-3 text-sm focus:border-green-400 outline-none" placeholder="Ex: Ele não quer banho..."><button onclick="getAdviceAI()" id="btn-ask-ai" class="w-10 h-10 bg-green-500 text-white rounded-xl flex items-center justify-center shadow-md hover:bg-green-600"><i class="fa-solid fa-paper-plane"></i></button></div>
@@ -198,7 +212,6 @@
         ];
 
         const DEFAULT_ROUTINE = [{ id: 1, title: 'Café da Manhã', icon: 'fa-mug-hot', duration: 15, completed: false, active: true }, { id: 2, title: 'Escola', icon: 'fa-school', duration: 240, completed: false, active: true }, { id: 3, title: 'Almoço', icon: 'fa-utensils', duration: 30, completed: false, active: true }, { id: 4, title: 'Banho', icon: 'fa-bath', duration: 20, completed: false, active: true }, { id: 5, title: 'Dormir', icon: 'fa-bed', duration: 600, completed: false, active: true }];
-        // Prêmios com DURAÇÃO padrão
         const DEFAULT_REWARDS = [{ id: 1, title: '15min de Tablet', cost: 3, icon: 'fa-tablet-screen-button', duration: 15 }, { id: 2, title: 'Escolher o Jantar', cost: 5, icon: 'fa-utensils', duration: 30 }, { id: 3, title: 'Passeio no Parque', cost: 10, icon: 'fa-tree', duration: 60 }];
 
         let savedLocal = localStorage.getItem('minhaRotinaData_v12.0_estrelinha');
@@ -210,7 +223,6 @@
         };
         
         if(!state.rewards) state.rewards = DEFAULT_REWARDS;
-        // Garantir que todos os prêmios tenham duração, mesmo os antigos
         state.rewards.forEach(r => { if(r.duration === undefined) r.duration = 15; });
         state.routine.forEach(t => { if(t.active === undefined) t.active = true; });
 
@@ -231,7 +243,7 @@
                         <p class="text-slate-400">Rotina divertida</p>
                     </div>
                     
-                    <div class="w-full bg-white p-6 rounded-3xl shadow-md border border-slate-100 mb-6">
+                    <div class="w-full max-w-sm bg-white p-6 rounded-3xl shadow-md border border-slate-100 mb-6">
                         <input type="email" id="auth-email" placeholder="E-mail" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 mb-3 outline-none focus:border-blue-400 transition">
                         <input type="password" id="auth-password" placeholder="Senha" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 mb-4 outline-none focus:border-blue-400 transition">
                         
@@ -249,9 +261,9 @@
             mainContent.innerHTML = html;
         }
 
+        // --- Render Functions: Add responsive checks to containers ---
         function renderChildDashboard() {
             const greeting = state.childName ? `Olá, ${state.childName}!` : 'Estrelinha';
-            // FILTRO DE VISIBILIDADE: Só mostra o que o pai deixou ativo
             const visibleTasks = state.routine.filter(t => t.active !== false);
             
             let html = `<header class="flex justify-between items-center p-6 bg-white/80 backdrop-blur-md shadow-sm z-10 sticky top-0"><div onclick="changeView('store')" class="flex items-center gap-2 bg-yellow-50 px-4 py-2 rounded-full shadow-sm border border-yellow-200 cursor-pointer active:scale-95 transition hover:bg-yellow-100"><i class="fa-solid fa-star text-yellow-400 text-2xl drop-shadow-sm animate-pulse"></i><span class="text-2xl font-bold text-yellow-600">${state.stars}</span><span class="text-xs text-yellow-500 font-medium ml-1">LOJA</span></div><div class="flex gap-2"><button onclick="changeView('feelings')" class="w-10 h-10 flex items-center justify-center bg-pink-100 text-pink-500 rounded-full hover:bg-pink-200 transition shadow-sm"><i class="fa-solid fa-face-smile text-lg"></i></button><button onclick="changeView('parent')" class="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition"><i class="fa-solid fa-gear text-lg"></i></button></div></header><div class="flex-1 overflow-y-auto p-4 space-y-4 pb-24"><div class="ml-2 mb-4"><h1 class="text-2xl font-bold text-slate-800">${greeting}</h1><p class="text-slate-500 text-sm">Sua rotina divertida!</p></div>${state.currentFeeling ? `<div class="bg-white p-3 rounded-2xl shadow-sm flex items-center gap-3 mb-4 border-l-4 border-pink-300"><span class="text-2xl">${getFeelingEmoji(state.currentFeeling)}</span><span class="text-slate-600 font-medium">Estou: <strong>${state.currentFeeling}</strong></span><button onclick="clearFeeling()" class="ml-auto text-slate-300 hover:text-red-400 w-8 h-8 flex items-center justify-center rounded-full"><i class="fa-solid fa-times"></i></button></div>` : ''}${visibleTasks.length===0?`<div class="text-center p-8 text-slate-400 border-2 border-dashed border-slate-200 rounded-3xl"><i class="fa-solid fa-clipboard-list text-4xl mb-2"></i><p>Nenhuma tarefa para agora!</p></div>`:''}${visibleTasks.map(task => `<div onclick="${!task.completed ? `startTask(${task.id})` : ''}" class="relative p-4 rounded-3xl flex items-center gap-5 transition-all transform duration-300 ${task.completed ? 'bg-slate-100 opacity-60 grayscale cursor-default' : 'bg-white shadow-md hover:scale-[1.02] hover:shadow-lg cursor-pointer border-l-8 border-[var(--accent)]'}"><div class="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl shrink-0 ${task.completed ? 'bg-slate-200 text-slate-400' : 'bg-[var(--accent-light)] text-[var(--accent)]'}"><i class="fa-solid ${task.icon}"></i></div><div class="flex-1 min-w-0"><h3 class="font-bold text-lg text-slate-800 truncate ${task.completed ? 'line-through' : ''}">${task.title}</h3><p class="text-slate-500 text-sm flex items-center gap-1"><i class="fa-regular fa-clock text-xs"></i> ${formatDuration(task.duration)}</p></div>${task.completed ? '<i class="fa-solid fa-circle-check text-green-500 text-3xl"></i>' : '<div class="bg-[var(--accent-light)] w-10 h-10 rounded-full flex items-center justify-center text-[var(--accent)]"><i class="fa-solid fa-play ml-1"></i></div>'}</div>`).join('')}</div>`;
@@ -266,7 +278,6 @@
         function renderActiveTask() {
             if (!state.activeTask) { changeView('child'); return; }
             let displayTime = 0; const total = state.activeTask.duration * 60;
-            // Lógica de tempo "À Prova de Sono": Usa timestamp do futuro para calcular restante
             if (!isPaused) { const now = Date.now(); const remaining = Math.ceil((state.activeTaskEndTime - now) / 1000); displayTime = Math.max(0, remaining); timeLeft = displayTime; } else { displayTime = timeLeft; }
             const percentage = (displayTime / total) * 100; const isFinished = displayTime <= 0; const isCountdown = displayTime <= 10 && displayTime > 0;
             let progressColor = 'bg-green-500'; if (percentage < 50) progressColor = 'bg-yellow-400'; if (percentage < 20) progressColor = 'bg-red-500';
@@ -301,11 +312,10 @@
         }
 
         // --- FUNÇÃO RENDER PRINCIPAL ---
-        function render() {
+        function render(shouldSave = true) {
             appContainer.className = `${state.theme} w-full h-screen max-w-md mx-auto flex flex-col relative overflow-hidden sm:border-x sm:border-slate-200 shadow-2xl transition-colors duration-500`;
             mainContent.innerHTML = '';
             
-            // Se estiver na view 'login', renderiza login. Caso contrário, verifica auth
             if (state.view === 'login') {
                 renderLoginScreen();
             } else {
@@ -318,7 +328,7 @@
                     default: renderChildDashboard(); break;
                 }
             }
-            saveData();
+            if(shouldSave) saveData();
         }
 
         // --- AUTH HANDLERS ---
@@ -338,6 +348,8 @@
                 _isOffline = false;
                 state.view = 'child';
                 await loadFromSupabase();
+                // Setup Realtime after login
+                setupRealtime();
                 render();
             } catch(e) {
                 let msg = e.message;
@@ -367,12 +379,13 @@
                 
                 if(data.user && !data.session) {
                     alert("Conta criada com sucesso! \n\nPor favor, verifique seu e-mail (e a pasta de spam) para confirmar o cadastro antes de entrar.");
-                    state.view = 'login'; // Mantém no login
+                    state.view = 'login'; 
                     render();
                 } else if (data.session) {
                     _user = data.session.user;
                     state.view = 'child';
                     await loadFromSupabase();
+                    setupRealtime();
                     render();
                 }
             } catch(e) {
@@ -390,17 +403,43 @@
 
         function handleOffline() {
             _isOffline = true;
-            state.isOfflineMode = true; // Salva a preferência
+            state.isOfflineMode = true; 
             state.view = 'child';
             render();
         }
 
         async function handleLogout() {
             await _supabase.auth.signOut();
+            if(realtimeChannel) _supabase.removeChannel(realtimeChannel);
             _user = null;
-            state.isOfflineMode = false; // Reseta preferencia
+            state.isOfflineMode = false; 
             state.view = 'login';
             render();
+        }
+
+        // --- REALTIME & SYNC ---
+        let realtimeChannel = null;
+
+        function setupRealtime() {
+            if (!_user) return;
+            if (realtimeChannel) _supabase.removeChannel(realtimeChannel);
+
+            realtimeChannel = _supabase
+                .channel('public:user_data')
+                .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'user_data', filter: `id=eq.${_user.id}` }, payload => {
+                    if (payload.new && payload.new.content) {
+                        // Compara se realmente mudou para evitar loop
+                        if(JSON.stringify(state) !== JSON.stringify(payload.new.content)) {
+                            console.log('Atualização recebida de outro dispositivo!');
+                            state = { ...state, ...payload.new.content };
+                            // Renderiza sem salvar de volta (avoid loops)
+                            render(false); 
+                        }
+                    }
+                })
+                .subscribe((status) => {
+                    if(status === 'SUBSCRIBED') console.log('Sincronização em tempo real ativa!');
+                });
         }
 
         // --- LÓGICA DE TEMPO REAL E CONTROLE ---
@@ -421,7 +460,6 @@
 
         function startRewardTimer() {
             const reward = state.rewards.find(r => r.id === pendingPurchaseId);
-            // USA DURAÇÃO DEFINIDA NO PRÊMIO, OU 15 MIN PADRÃO
             let minutes = reward ? (reward.duration || 15) : 15;
             
             const rewardTask = { id: 'reward-timer', title: `Tempo: ${reward ? reward.title : 'Recompensa'}`, duration: minutes, icon: reward ? reward.icon : 'fa-clock', isRewardTimer: true };
@@ -476,7 +514,6 @@
             b.innerHTML='Gerar'; b.disabled=false;
             if(r){
                 try {
-                    // Remove markdown se houver
                     const cleanJson = r.replace(/```json/g, '').replace(/```/g, '').trim();
                     const j = JSON.parse(cleanJson);
                     if(Array.isArray(j)){
@@ -499,7 +536,7 @@
         function manualAdjustStars(a) { if(a<0&&state.stars<=0)return; state.stars+=a; render(); a>0?playSound('success'):playSound('error'); }
         function hideOverlays() { document.querySelectorAll('[id$="-overlay"]').forEach(e=>e.classList.add('hidden')); }
         function tryBuyReward(id) { const r=state.rewards.find(x=>x.id===id); if(!r)return; playSound('click'); if(state.stars>=r.cost){ pendingPurchaseId=id; document.getElementById('purchase-icon').className=`fa-solid ${r.icon}`; document.getElementById('purchase-title').innerText=r.title; document.getElementById('purchase-cost').innerText=r.cost; document.getElementById('purchase-duration').innerText=r.duration || 15; document.getElementById('purchase-confirm-modal').classList.remove('hidden'); }else{ const c=document.getElementById(`reward-card-${id}`); if(c){c.classList.remove('shake-trigger');void c.offsetWidth;c.classList.add('shake-trigger');} showErrorToast(`Faltam ${r.cost-state.stars} estrelas!`); playSound('error'); } }
-        function confirmPurchase() { if(!pendingPurchaseId)return; const r=state.rewards.find(x=>x.id===pendingPurchaseId); if(r&&state.stars>=r.cost){ state.stars-=r.cost; playSound('cash'); saveData(); closePurchaseModal(); render(); document.getElementById('redeem-duration-msg').innerText=`Você ganhou ${r.duration || 15} min de diversão.`; document.getElementById('redeem-success-overlay').classList.remove('hidden'); } }
+        function confirmPurchase() { if(!pendingPurchaseId)return; const r=state.rewards.find(x=>x.id===pendingPurchaseId); if(r&&state.stars>=r.cost){ state.stars-=r.cost; playSound('cash'); saveData(); closePurchaseModal(); render(); document.getElementById('redeem-success-overlay').classList.remove('hidden'); } }
         function closePurchaseModal() { document.getElementById('purchase-confirm-modal').classList.add('hidden'); pendingPurchaseId=null; }
         function showErrorToast(m) { const t=document.getElementById('error-toast'); document.getElementById('error-toast-msg').innerText=m; t.classList.remove('hidden'); t.classList.add('animate-bounce-in'); setTimeout(()=>t.classList.add('hidden'),2000); }
         
@@ -546,6 +583,7 @@
                     state.view = 'child'; 
                     state.isOfflineMode = false;
                     await loadFromSupabase();
+                    setupRealtime(); // Ativa Realtime
                 } else {
                     // Sem sessão Supabase.
                     // Verifica se o usuário escolheu usar Offline anteriormente
@@ -569,7 +607,7 @@
             } finally {
                 document.getElementById('loading-screen').style.display = 'none';
                 document.getElementById('app-container').classList.remove('hidden');
-                render();
+                render(false);
             }
         }
 
