@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Estrelinha - Inteligente ✨</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -14,36 +14,62 @@
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; overscroll-behavior: none; user-select: none; -webkit-tap-highlight-color: transparent; background-color: #f1f5f9; }
+        /* Correção para altura real em mobile */
+        :root {
+            --app-height: 100dvh;
+        }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            overscroll-behavior: none; 
+            user-select: none; 
+            -webkit-tap-highlight-color: transparent; 
+            background-color: #f1f5f9;
+            height: var(--app-height);
+            width: 100vw;
+            overflow: hidden;
+        }
+
+        /* Animações */
         @keyframes bounce-in { 0% { transform: scale(0.3); opacity: 0; } 50% { transform: scale(1.05); } 100% { transform: scale(1); opacity: 1; } }
         @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
         @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-10px); } 100% { transform: translateY(0px); } }
         @keyframes slide-up { from { transform: translateY(100%); } to { transform: translateY(0); } }
         @keyframes heartbeat { 0% { transform: scale(1); } 50% { transform: scale(1.2); } 100% { transform: scale(1); } }
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        
         .animate-bounce-in { animation: bounce-in 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards; }
         .animate-shake { animation: shake 0.4s ease-in-out; }
         .animate-float { animation: float 3s ease-in-out infinite; }
         .animate-slide-up { animation: slide-up 0.3s ease-out forwards; }
         .animate-heartbeat { animation: heartbeat 1s infinite; }
         .animate-spin-custom { animation: spin 1s linear infinite; }
+        
+        /* Temas */
         .theme-blue { --bg-primary: #eff6ff; --text-primary: #1e293b; --accent: #3b82f6; --accent-light: #dbeafe; }
         .theme-green { --bg-primary: #f0fdf4; --text-primary: #14532d; --accent: #22c55e; --accent-light: #dcfce7; }
         .theme-purple { --bg-primary: #faf5ff; --text-primary: #4c1d95; --accent: #a855f7; --accent-light: #f3e8ff; }
         .theme-dark { --bg-primary: #0f172a; --text-primary: #f1f5f9; --accent: #6366f1; --accent-light: #1e293b; }
         
-        /* Ajuste de responsividade: Em telas grandes, o app flutua no centro. Em mobile, ocupa tudo */
+        /* Container Responsivo */
         #app-container { 
             background-color: var(--bg-primary); 
             color: var(--text-primary); 
             transition: background-color 0.5s, color 0.5s; 
-            box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+            box-shadow: 0 0 0 0;
+            width: 100%;
+            height: 100%;
         }
+        
+        /* Em telas maiores (Tablet/PC), vira um "celular" centralizado */
         @media (min-width: 640px) {
             #app-container {
-                height: 95vh;
-                margin-top: 2.5vh;
+                height: 90vh; /* Margem segura */
+                max-height: 850px;
+                max-width: 450px;
+                margin: 5vh auto;
                 border-radius: 2rem;
+                box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+                border: 8px solid #cbd5e1;
             }
         }
 
@@ -64,17 +90,17 @@
     </div>
 
     <!-- Container Principal -->
-    <div id="app-container" class="theme-blue w-full h-full sm:h-[95vh] sm:max-w-md mx-auto flex flex-col relative overflow-hidden sm:border-x sm:border-slate-200 shadow-2xl hidden">
+    <div id="app-container" class="theme-blue flex flex-col relative overflow-hidden hidden">
         
         <!-- Conteúdo dinâmico -->
-        <div id="main-content" class="flex-1 flex flex-col h-full overflow-hidden relative"></div>
+        <div id="main-content" class="flex-1 flex flex-col h-full overflow-hidden relative w-full"></div>
 
-        <!-- INDICADOR DE STATUS -->
-        <div id="status-indicator" class="absolute bottom-2 left-2 z-50 text-[10px] text-slate-500 font-bold flex items-center gap-1 pointer-events-none transition-opacity duration-500">
+        <!-- INDICADOR DE STATUS (Clicável) -->
+        <div id="status-indicator" onclick="forceSync()" class="absolute bottom-3 left-3 z-50 text-[10px] text-slate-500 font-bold flex items-center gap-1 cursor-pointer hover:scale-105 transition-transform bg-white/60 px-2 py-1 rounded-full shadow-sm border border-white/50 backdrop-blur-sm">
             <i class="fa-solid fa-cloud"></i> Verificando...
         </div>
 
-        <!-- OVERLAYS (Responsivos) -->
+        <!-- OVERLAYS -->
         <div id="reward-overlay" class="hidden absolute inset-0 bg-black/60 z-50 flex items-center justify-center backdrop-blur-sm p-4">
             <div class="bg-white p-8 rounded-3xl text-center shadow-2xl animate-bounce-in w-full max-w-xs border-4 border-yellow-300">
                 <i class="fa-solid fa-star text-yellow-400 text-7xl mb-4 animate-spin-custom" style="animation-duration: 3s; filter: drop-shadow(0 0 10px gold);"></i>
@@ -142,7 +168,7 @@
 
         <!-- Modais de Edição -->
         <div id="task-modal" class="hidden absolute inset-0 bg-black/50 z-40 flex items-end sm:items-center justify-center backdrop-blur-sm p-4">
-            <div class="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl animate-slide-up max-h-[90vh] flex flex-col">
+            <div class="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl animate-slide-up max-h-[90dvh] flex flex-col">
                 <div class="flex justify-between items-center mb-6"><h2 class="text-xl font-bold text-slate-800" id="modal-title">Editar Atividade</h2><button onclick="closeTaskModal()" class="p-2 bg-slate-100 rounded-full text-slate-500 hover:bg-slate-200"><i class="fa-solid fa-times"></i></button></div>
                 <div class="flex-1 overflow-y-auto space-y-4 pr-2">
                     <div><label class="block text-sm font-bold text-slate-500 mb-1">Nome</label><input type="text" id="edit-title" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 font-medium outline-none"></div>
@@ -154,11 +180,11 @@
         </div>
 
         <div id="reward-modal" class="hidden absolute inset-0 bg-black/50 z-40 flex items-end sm:items-center justify-center backdrop-blur-sm p-4">
-            <div class="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl animate-slide-up max-h-[90vh] flex flex-col">
+            <div class="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl animate-slide-up max-h-[90dvh] flex flex-col">
                 <div class="flex justify-between items-center mb-6"><h2 class="text-xl font-bold text-slate-800" id="reward-modal-title">Editar Prêmio</h2><button onclick="closeRewardModal()" class="p-2 bg-slate-100 rounded-full text-slate-500 hover:bg-slate-200"><i class="fa-solid fa-times"></i></button></div>
                 <div class="flex-1 overflow-y-auto space-y-4 pr-2">
                     <div><label class="block text-sm font-bold text-slate-500 mb-1">Nome</label><input type="text" id="reward-title" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 font-medium outline-none"></div>
-                    <div><label class="block text-sm font-bold text-slate-500 mb-1">Preço (Estrelas)</label><div class="flex items-center gap-4"><input type="range" id="reward-cost-range" min="1" max="50" class="flex-1 accent-yellow-400" oninput="syncCost(this.value)"><div class="w-16 bg-yellow-50 border border-yellow-200 rounded-xl p-2 text-center font-bold text-yellow-700"><span id="reward-cost-display">5</span></div></div></div>
+                    <div><label class="block text-sm font-bold text-slate-500 mb-1">Preço</label><div class="flex items-center gap-4"><input type="range" id="reward-cost-range" min="1" max="50" class="flex-1 accent-yellow-400" oninput="syncCost(this.value)"><div class="w-16 bg-yellow-50 border border-yellow-200 rounded-xl p-2 text-center font-bold text-yellow-700"><span id="reward-cost-display">5</span></div></div></div>
                     <!-- NOVO: Duração do Prêmio -->
                     <div><label class="block text-sm font-bold text-slate-500 mb-1">Duração do Prêmio (min)</label><div class="flex items-center gap-4"><input type="range" id="reward-duration-range" min="1" max="120" class="flex-1 accent-blue-400" oninput="syncDuration(this.value, 'reward-duration-display')"><div class="w-16 bg-blue-50 border border-blue-200 rounded-xl p-2 text-center font-bold text-blue-700" id="reward-duration-display">15</div></div></div>
                     <div><label class="block text-sm font-bold text-slate-500 mb-2">Ícone</label><div class="grid grid-cols-5 gap-2 icon-grid-scroll max-h-48 overflow-y-auto" id="reward-icon-grid"></div></div>
@@ -178,7 +204,7 @@
         </div>
 
         <div id="ai-advice-modal" class="hidden absolute inset-0 bg-black/60 z-50 flex items-center justify-center backdrop-blur-sm p-4">
-            <div class="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl animate-bounce-in flex flex-col h-[60vh]">
+            <div class="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl animate-bounce-in flex flex-col h-[60dvh]">
                 <div class="flex justify-between items-center mb-4 border-b pb-2"><h2 class="text-lg font-bold text-slate-700 flex items-center gap-2"><i class="fa-solid fa-user-doctor text-green-500"></i> Conselheiro</h2><button onclick="closeAdviceModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-times"></i></button></div>
                 <div id="advice-content" class="flex-1 overflow-y-auto text-sm text-slate-600 leading-relaxed mb-4 p-2 bg-slate-50 rounded-xl">Olá! Sou seu assistente de apoio. Digite abaixo sua dúvida.</div>
                 <div class="flex gap-2"><input type="text" id="advice-prompt" class="flex-1 bg-white border border-slate-200 rounded-xl px-3 text-sm focus:border-green-400 outline-none" placeholder="Ex: Ele não quer banho..."><button onclick="getAdviceAI()" id="btn-ask-ai" class="w-10 h-10 bg-green-500 text-white rounded-xl flex items-center justify-center shadow-md hover:bg-green-600"><i class="fa-solid fa-paper-plane"></i></button></div>
@@ -214,7 +240,7 @@
         const DEFAULT_ROUTINE = [{ id: 1, title: 'Café da Manhã', icon: 'fa-mug-hot', duration: 15, completed: false, active: true }, { id: 2, title: 'Escola', icon: 'fa-school', duration: 240, completed: false, active: true }, { id: 3, title: 'Almoço', icon: 'fa-utensils', duration: 30, completed: false, active: true }, { id: 4, title: 'Banho', icon: 'fa-bath', duration: 20, completed: false, active: true }, { id: 5, title: 'Dormir', icon: 'fa-bed', duration: 600, completed: false, active: true }];
         const DEFAULT_REWARDS = [{ id: 1, title: '15min de Tablet', cost: 3, icon: 'fa-tablet-screen-button', duration: 15 }, { id: 2, title: 'Escolher o Jantar', cost: 5, icon: 'fa-utensils', duration: 30 }, { id: 3, title: 'Passeio no Parque', cost: 10, icon: 'fa-tree', duration: 60 }];
 
-        let savedLocal = localStorage.getItem('minhaRotinaData_v12.0_estrelinha');
+        let savedLocal = localStorage.getItem('minhaRotinaData_v12.3_estrelinha');
         let state = savedLocal ? JSON.parse(savedLocal) : { 
             view: 'child', 
             isOfflineMode: false,
@@ -234,7 +260,7 @@
         // --- RENDERIZADORES ---
         function renderLoginScreen() {
             let html = `
-                <div class="flex flex-col h-full bg-slate-50 p-6 justify-center items-center">
+                <div class="flex flex-col h-full bg-slate-50 p-6 justify-center items-center w-full">
                     <div class="mb-8 text-center animate-bounce-in">
                         <div class="w-24 h-24 bg-yellow-400 rounded-full flex items-center justify-center mx-auto mb-4 shadow-xl">
                             <i class="fa-solid fa-star text-white text-5xl"></i>
@@ -261,17 +287,16 @@
             mainContent.innerHTML = html;
         }
 
-        // --- Render Functions: Add responsive checks to containers ---
         function renderChildDashboard() {
             const greeting = state.childName ? `Olá, ${state.childName}!` : 'Estrelinha';
             const visibleTasks = state.routine.filter(t => t.active !== false);
             
-            let html = `<header class="flex justify-between items-center p-6 bg-white/80 backdrop-blur-md shadow-sm z-10 sticky top-0"><div onclick="changeView('store')" class="flex items-center gap-2 bg-yellow-50 px-4 py-2 rounded-full shadow-sm border border-yellow-200 cursor-pointer active:scale-95 transition hover:bg-yellow-100"><i class="fa-solid fa-star text-yellow-400 text-2xl drop-shadow-sm animate-pulse"></i><span class="text-2xl font-bold text-yellow-600">${state.stars}</span><span class="text-xs text-yellow-500 font-medium ml-1">LOJA</span></div><div class="flex gap-2"><button onclick="changeView('feelings')" class="w-10 h-10 flex items-center justify-center bg-pink-100 text-pink-500 rounded-full hover:bg-pink-200 transition shadow-sm"><i class="fa-solid fa-face-smile text-lg"></i></button><button onclick="changeView('parent')" class="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition"><i class="fa-solid fa-gear text-lg"></i></button></div></header><div class="flex-1 overflow-y-auto p-4 space-y-4 pb-24"><div class="ml-2 mb-4"><h1 class="text-2xl font-bold text-slate-800">${greeting}</h1><p class="text-slate-500 text-sm">Sua rotina divertida!</p></div>${state.currentFeeling ? `<div class="bg-white p-3 rounded-2xl shadow-sm flex items-center gap-3 mb-4 border-l-4 border-pink-300"><span class="text-2xl">${getFeelingEmoji(state.currentFeeling)}</span><span class="text-slate-600 font-medium">Estou: <strong>${state.currentFeeling}</strong></span><button onclick="clearFeeling()" class="ml-auto text-slate-300 hover:text-red-400 w-8 h-8 flex items-center justify-center rounded-full"><i class="fa-solid fa-times"></i></button></div>` : ''}${visibleTasks.length===0?`<div class="text-center p-8 text-slate-400 border-2 border-dashed border-slate-200 rounded-3xl"><i class="fa-solid fa-clipboard-list text-4xl mb-2"></i><p>Nenhuma tarefa para agora!</p></div>`:''}${visibleTasks.map(task => `<div onclick="${!task.completed ? `startTask(${task.id})` : ''}" class="relative p-4 rounded-3xl flex items-center gap-5 transition-all transform duration-300 ${task.completed ? 'bg-slate-100 opacity-60 grayscale cursor-default' : 'bg-white shadow-md hover:scale-[1.02] hover:shadow-lg cursor-pointer border-l-8 border-[var(--accent)]'}"><div class="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl shrink-0 ${task.completed ? 'bg-slate-200 text-slate-400' : 'bg-[var(--accent-light)] text-[var(--accent)]'}"><i class="fa-solid ${task.icon}"></i></div><div class="flex-1 min-w-0"><h3 class="font-bold text-lg text-slate-800 truncate ${task.completed ? 'line-through' : ''}">${task.title}</h3><p class="text-slate-500 text-sm flex items-center gap-1"><i class="fa-regular fa-clock text-xs"></i> ${formatDuration(task.duration)}</p></div>${task.completed ? '<i class="fa-solid fa-circle-check text-green-500 text-3xl"></i>' : '<div class="bg-[var(--accent-light)] w-10 h-10 rounded-full flex items-center justify-center text-[var(--accent)]"><i class="fa-solid fa-play ml-1"></i></div>'}</div>`).join('')}</div>`;
+            let html = `<header class="flex justify-between items-center p-6 bg-white/80 backdrop-blur-md shadow-sm z-10 sticky top-0 w-full"><div onclick="changeView('store')" class="flex items-center gap-2 bg-yellow-50 px-4 py-2 rounded-full shadow-sm border border-yellow-200 cursor-pointer active:scale-95 transition hover:bg-yellow-100"><i class="fa-solid fa-star text-yellow-400 text-2xl drop-shadow-sm animate-pulse"></i><span class="text-2xl font-bold text-yellow-600">${state.stars}</span><span class="text-xs text-yellow-500 font-medium ml-1">LOJA</span></div><div class="flex gap-2"><button onclick="changeView('feelings')" class="w-10 h-10 flex items-center justify-center bg-pink-100 text-pink-500 rounded-full hover:bg-pink-200 transition shadow-sm"><i class="fa-solid fa-face-smile text-lg"></i></button><button onclick="changeView('parent')" class="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition"><i class="fa-solid fa-gear text-lg"></i></button></div></header><div class="flex-1 overflow-y-auto p-4 space-y-4 pb-24 w-full"><div class="ml-2 mb-4"><h1 class="text-2xl font-bold text-slate-800">${greeting}</h1><p class="text-slate-500 text-sm">Sua rotina divertida!</p></div>${state.currentFeeling ? `<div class="bg-white p-3 rounded-2xl shadow-sm flex items-center gap-3 mb-4 border-l-4 border-pink-300"><span class="text-2xl">${getFeelingEmoji(state.currentFeeling)}</span><span class="text-slate-600 font-medium">Estou: <strong>${state.currentFeeling}</strong></span><button onclick="clearFeeling()" class="ml-auto text-slate-300 hover:text-red-400 w-8 h-8 flex items-center justify-center rounded-full"><i class="fa-solid fa-times"></i></button></div>` : ''}${visibleTasks.length===0?`<div class="text-center p-8 text-slate-400 border-2 border-dashed border-slate-200 rounded-3xl"><i class="fa-solid fa-clipboard-list text-4xl mb-2"></i><p>Nenhuma tarefa para agora!</p></div>`:''}${visibleTasks.map(task => `<div onclick="${!task.completed ? `startTask(${task.id})` : ''}" class="relative p-4 rounded-3xl flex items-center gap-5 transition-all transform duration-300 ${task.completed ? 'bg-slate-100 opacity-60 grayscale cursor-default' : 'bg-white shadow-md hover:scale-[1.02] hover:shadow-lg cursor-pointer border-l-8 border-[var(--accent)]'}"><div class="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl shrink-0 ${task.completed ? 'bg-slate-200 text-slate-400' : 'bg-[var(--accent-light)] text-[var(--accent)]'}"><i class="fa-solid ${task.icon}"></i></div><div class="flex-1 min-w-0"><h3 class="font-bold text-lg text-slate-800 truncate ${task.completed ? 'line-through' : ''}">${task.title}</h3><p class="text-slate-500 text-sm flex items-center gap-1"><i class="fa-regular fa-clock text-xs"></i> ${formatDuration(task.duration)}</p></div>${task.completed ? '<i class="fa-solid fa-circle-check text-green-500 text-3xl"></i>' : '<div class="bg-[var(--accent-light)] w-10 h-10 rounded-full flex items-center justify-center text-[var(--accent)]"><i class="fa-solid fa-play ml-1"></i></div>'}</div>`).join('')}</div>`;
             mainContent.innerHTML = html;
         }
 
         function renderRewardStore() {
-            let html = `<div class="flex flex-col h-full bg-slate-50"><header class="bg-yellow-400 p-6 shadow-md flex items-center justify-between z-10 sticky top-0"><div class="flex items-center gap-3 text-white"><button onclick="changeView('child')" class="p-2 bg-yellow-500 rounded-full hover:bg-yellow-600 transition shadow-sm"><i class="fa-solid fa-arrow-left text-lg"></i></button><h1 class="text-2xl font-bold text-slate-900">Lojinha</h1></div><div class="flex items-center gap-2 bg-slate-900/10 px-4 py-2 rounded-full border border-slate-900/10"><i class="fa-solid fa-star text-white text-xl drop-shadow-sm"></i><span class="text-2xl font-bold text-slate-900">${state.stars}</span></div></header><div class="flex-1 overflow-y-auto p-4 pb-20"><div class="bg-yellow-100 p-4 rounded-2xl border border-yellow-200 mb-6 flex items-start gap-3"><i class="fa-solid fa-circle-info text-yellow-600 mt-1"></i><p class="text-yellow-800 text-sm">Toque nos prêmios para comprar!</p></div>${state.rewards.length === 0 ? `<div class="text-center p-8 text-slate-400"><i class="fa-solid fa-store-slash text-4xl mb-2"></i><p>A loja está vazia.</p></div>` : ''}<div class="grid grid-cols-2 gap-4">${state.rewards.map(reward => { const canAfford = state.stars >= reward.cost; return `<div id="reward-card-${reward.id}" onclick="tryBuyReward(${reward.id})" class="relative bg-white p-4 rounded-3xl shadow-sm flex flex-col items-center gap-3 text-center transition-all duration-200 active:scale-95 cursor-pointer ${canAfford ? 'border-2 border-transparent hover:border-green-400 hover:shadow-lg' : 'opacity-70 grayscale border-2 border-transparent'}"><div class="w-14 h-14 rounded-full ${canAfford ? 'bg-indigo-100 text-indigo-500' : 'bg-slate-100 text-slate-400'} flex items-center justify-center text-2xl mb-1"><i class="fa-solid ${reward.icon}"></i></div><h3 class="font-bold text-slate-700 leading-tight text-sm h-10 flex items-center justify-center overflow-hidden line-clamp-2">${reward.title}</h3><div class="px-4 py-1 rounded-full text-sm font-bold flex items-center gap-1 ${canAfford ? 'bg-yellow-100 text-yellow-700' : 'bg-slate-100 text-slate-500'}"><span>${reward.cost}</span> <i class="fa-solid fa-star text-xs"></i></div><div class="absolute top-2 right-2 bg-black/10 text-slate-600 text-[10px] px-2 py-0.5 rounded-full font-bold flex items-center gap-1"><i class="fa-solid fa-clock"></i> ${reward.duration}m</div></div>`; }).join('')}</div></div></div>`;
+            let html = `<div class="flex flex-col h-full bg-slate-50 w-full"><header class="bg-yellow-400 p-6 shadow-md flex items-center justify-between z-10 sticky top-0"><div class="flex items-center gap-3 text-white"><button onclick="changeView('child')" class="p-2 bg-yellow-500 rounded-full hover:bg-yellow-600 transition shadow-sm"><i class="fa-solid fa-arrow-left text-lg"></i></button><h1 class="text-2xl font-bold text-slate-900">Lojinha</h1></div><div class="flex items-center gap-2 bg-slate-900/10 px-4 py-2 rounded-full border border-slate-900/10"><i class="fa-solid fa-star text-white text-xl drop-shadow-sm"></i><span class="text-2xl font-bold text-slate-900">${state.stars}</span></div></header><div class="flex-1 overflow-y-auto p-4 pb-20"><div class="bg-yellow-100 p-4 rounded-2xl border border-yellow-200 mb-6 flex items-start gap-3"><i class="fa-solid fa-circle-info text-yellow-600 mt-1"></i><p class="text-yellow-800 text-sm">Toque nos prêmios para comprar!</p></div>${state.rewards.length === 0 ? `<div class="text-center p-8 text-slate-400"><i class="fa-solid fa-store-slash text-4xl mb-2"></i><p>A loja está vazia.</p></div>` : ''}<div class="grid grid-cols-2 gap-4">${state.rewards.map(reward => { const canAfford = state.stars >= reward.cost; return `<div id="reward-card-${reward.id}" onclick="tryBuyReward(${reward.id})" class="relative bg-white p-4 rounded-3xl shadow-sm flex flex-col items-center gap-3 text-center transition-all duration-200 active:scale-95 cursor-pointer ${canAfford ? 'border-2 border-transparent hover:border-green-400 hover:shadow-lg' : 'opacity-70 grayscale border-2 border-transparent'}"><div class="w-14 h-14 rounded-full ${canAfford ? 'bg-indigo-100 text-indigo-500' : 'bg-slate-100 text-slate-400'} flex items-center justify-center text-2xl mb-1"><i class="fa-solid ${reward.icon}"></i></div><h3 class="font-bold text-slate-700 leading-tight text-sm h-10 flex items-center justify-center overflow-hidden line-clamp-2">${reward.title}</h3><div class="px-4 py-1 rounded-full text-sm font-bold flex items-center gap-1 ${canAfford ? 'bg-yellow-100 text-yellow-700' : 'bg-slate-100 text-slate-500'}"><span>${reward.cost}</span> <i class="fa-solid fa-star text-xs"></i></div><div class="absolute top-2 right-2 bg-black/10 text-slate-600 text-[10px] px-2 py-0.5 rounded-full font-bold flex items-center gap-1"><i class="fa-solid fa-clock"></i> ${reward.duration}m</div></div>`; }).join('')}</div></div></div>`;
             mainContent.innerHTML = html;
         }
 
@@ -294,12 +319,12 @@
                 `<div class="text-center w-full px-4"><p class="text-2xl mb-6 text-yellow-300 font-bold drop-shadow-md animate-bounce">Tempo Esgotado!</p><div class="flex flex-col gap-4 items-center"><button onclick="finishTask(true)" class="w-full bg-yellow-400 text-slate-900 px-6 py-4 rounded-2xl font-bold text-xl shadow-xl hover:bg-yellow-300 transform transition hover:scale-105 active:scale-95 border-b-4 border-yellow-600">Pegar Estrelinha <i class="fa-solid fa-star ml-2"></i></button><button onclick="failTask(true)" class="w-full bg-red-900/50 text-red-200 border border-red-500/30 px-6 py-3 rounded-xl font-medium text-sm hover:bg-red-900/80 transition">Não realizei a tarefa (-1 Estrela)</button></div></div>`;
             }
 
-            let html = `<div class="flex flex-col h-full bg-slate-900 text-white p-6 relative"><div class="flex justify-between items-center mb-6"><button onclick="changeView('child')" class="w-10 h-10 flex items-center justify-center bg-white/10 rounded-full hover:bg-white/20 backdrop-blur-md"><i class="fa-solid fa-chevron-down text-lg"></i></button><span class="text-white/60 font-medium tracking-widest text-sm uppercase">${state.activeTask.isRewardTimer ? 'Recompensa' : 'Em Atividade'}</span><div class="w-10"></div></div><div class="flex-1 flex flex-col items-center justify-center z-10"><div class="relative mb-8"><div class="w-48 h-48 rounded-full flex items-center justify-center border-8 border-white/10 bg-white/5 relative z-10 animate-float"><i class="fa-solid ${state.activeTask.icon} text-7xl text-white drop-shadow-lg"></i></div>${percentage < 20 && !isFinished ? '<div class="absolute inset-0 bg-red-500 rounded-full opacity-30 animate-ping"></div>' : ''}</div><h2 class="text-3xl font-bold mb-2 text-center px-4">${state.activeTask.title}</h2><div class="text-6xl font-mono font-bold mb-8 tabular-nums tracking-tighter ${timerContainerClass}">${formatTime(displayTime)}</div>${isCountdown ? `<div class="text-red-400 font-bold mb-4 animate-pulse">QUASE ACABANDO!</div>` : ''}<div class="w-full h-6 bg-black/30 rounded-full overflow-hidden mb-10 border border-white/10"><div class="h-full transition-all duration-1000 ease-linear ${progressColor}" style="width: ${percentage}%"></div></div>${buttonsHtml}</div></div>`;
+            let html = `<div class="flex flex-col h-full bg-slate-900 text-white p-6 relative w-full"><div class="flex justify-between items-center mb-6"><button onclick="changeView('child')" class="w-10 h-10 flex items-center justify-center bg-white/10 rounded-full hover:bg-white/20 backdrop-blur-md"><i class="fa-solid fa-chevron-down text-lg"></i></button><span class="text-white/60 font-medium tracking-widest text-sm uppercase">${state.activeTask.isRewardTimer ? 'Recompensa' : 'Em Atividade'}</span><div class="w-10"></div></div><div class="flex-1 flex flex-col items-center justify-center z-10"><div class="relative mb-8"><div class="w-48 h-48 rounded-full flex items-center justify-center border-8 border-white/10 bg-white/5 relative z-10 animate-float"><i class="fa-solid ${state.activeTask.icon} text-7xl text-white drop-shadow-lg"></i></div>${percentage < 20 && !isFinished ? '<div class="absolute inset-0 bg-red-500 rounded-full opacity-30 animate-ping"></div>' : ''}</div><h2 class="text-3xl font-bold mb-2 text-center px-4">${state.activeTask.title}</h2><div class="text-6xl font-mono font-bold mb-8 tabular-nums tracking-tighter ${timerContainerClass}">${formatTime(displayTime)}</div>${isCountdown ? `<div class="text-red-400 font-bold mb-4 animate-pulse">QUASE ACABANDO!</div>` : ''}<div class="w-full h-6 bg-black/30 rounded-full overflow-hidden mb-10 border border-white/10"><div class="h-full transition-all duration-1000 ease-linear ${progressColor}" style="width: ${percentage}%"></div></div>${buttonsHtml}</div></div>`;
             mainContent.innerHTML = html;
         }
 
         function renderParentDashboard(){
-            let html=`<div class="flex flex-col h-full bg-slate-50"><header class="bg-white p-4 shadow-sm flex items-center gap-3 border-b border-slate-100 sticky top-0 z-20"><button onclick="changeView('child')" class="p-2 hover:bg-slate-100 rounded-full text-slate-500 transition"><i class="fa-solid fa-arrow-left text-xl"></i></button><h1 class="text-xl font-bold text-slate-800">Área dos Pais</h1></header><div class="flex-1 overflow-y-auto p-5 space-y-8"><section class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200"><h2 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4 text-center">Gestão de Comportamento</h2><div class="flex items-center justify-between gap-4"><button onclick="manualAdjustStars(-1)" class="w-16 h-16 rounded-2xl bg-red-50 text-red-500 border border-red-100 flex items-center justify-center text-3xl shadow-sm active:scale-95 transition hover:bg-red-100"><i class="fa-solid fa-minus"></i></button><div class="flex flex-col items-center"><div class="text-5xl font-bold text-yellow-500 flex items-center gap-2">${state.stars} <i class="fa-solid fa-star text-3xl"></i></div><span class="text-xs text-slate-400 mt-1">Saldo Atual</span></div><button onclick="manualAdjustStars(1)" class="w-16 h-16 rounded-2xl bg-green-50 text-green-500 border border-green-100 flex items-center justify-center text-3xl shadow-sm active:scale-95 transition hover:bg-green-100"><i class="fa-solid fa-plus"></i></button></div></section><section><label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 ml-1">Criança</label><div class="bg-white p-2 rounded-xl shadow-sm border border-slate-200"><input type="text" value="${state.childName}" oninput="updateChildName(this.value)" placeholder="Nome da Criança" class="w-full bg-transparent p-2 outline-none text-slate-700 font-bold"></div></section><section><h2 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 ml-1">Tema</h2><div class="grid grid-cols-4 gap-2">${renderThemeButton('theme-blue', 'bg-blue-500')}${renderThemeButton('theme-green', 'bg-green-500')}${renderThemeButton('theme-purple', 'bg-purple-500')}${renderThemeButton('theme-dark', 'bg-slate-800')}</div></section><section><div class="flex justify-between items-end mb-3 ml-1"><h2 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Rotina Diária (Clique no olho para ocultar)</h2><button onclick="resetDay()" class="text-xs text-red-400 hover:text-red-600 font-medium">Resetar Dia</button></div><div class="bg-white rounded-2xl shadow-sm border border-slate-200 divide-y divide-slate-100">${state.routine.map(task => `<div class="p-4 flex items-center gap-3 hover:bg-slate-50 transition"><div class="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center text-slate-500 ${task.active === false ? 'opacity-30' : ''}"><i class="fa-solid ${task.icon}"></i></div><div class="flex-1 min-w-0 ${task.active === false ? 'opacity-50' : ''}"><div class="font-bold text-slate-700 truncate">${task.title}</div><div class="text-xs text-slate-400">${task.duration} min</div></div><button onclick="toggleTaskVisibility(${task.id})" class="p-2 ${task.active === false ? 'text-slate-300' : 'text-blue-500'} hover:bg-blue-50 rounded-lg mr-1"><i class="fa-solid ${task.active === false ? 'fa-eye-slash' : 'fa-eye'}"></i></button><button onclick="openTaskModal(${task.id})" class="p-2 text-blue-400 hover:bg-blue-50 rounded-lg"><i class="fa-solid fa-pen"></i></button></div>`).join('')}<button onclick="openTaskModal()" class="w-full p-4 text-center text-blue-500 font-bold hover:bg-blue-50 transition rounded-b-2xl"><i class="fa-solid fa-plus-circle"></i> Adicionar</button></div></section><section><div class="flex justify-between items-end mb-3 ml-1"><h2 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Loja de Recompensas</h2></div><div class="bg-white rounded-2xl shadow-sm border border-slate-200 divide-y divide-slate-100">${state.rewards.map(reward => `<div class="p-4 flex items-center gap-3 hover:bg-slate-50 transition"><div class="w-10 h-10 rounded-lg bg-yellow-50 flex items-center justify-center text-yellow-600"><i class="fa-solid ${reward.icon}"></i></div><div class="flex-1 min-w-0"><div class="font-bold text-slate-700 truncate">${reward.title}</div><div class="text-xs text-yellow-600 font-bold flex items-center gap-1"><span>${reward.cost} <i class="fa-solid fa-star text-[10px]"></i></span> <span class="ml-2 bg-yellow-100 px-1.5 rounded text-[10px]">${reward.duration}m</span></div></div><button onclick="openRewardModal(${reward.id})" class="p-2 text-blue-400 hover:bg-blue-50 rounded-lg"><i class="fa-solid fa-pen"></i></button></div>`).join('')}<button onclick="openRewardModal()" class="w-full p-4 text-center text-yellow-600 font-bold hover:bg-yellow-50 transition rounded-b-2xl"><i class="fa-solid fa-plus-circle"></i> Adicionar Prêmio</button></div></section><div class="p-4"><button onclick="openAIModal()" class="w-full py-3 rounded-xl font-bold bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg hover:opacity-90 transition flex items-center justify-center gap-2"><span>✨ Criar Rotina com IA</span></button><button onclick="openAdviceModal()" class="w-full py-3 rounded-xl font-bold bg-green-500 text-white shadow-lg hover:bg-green-600 transition flex items-center justify-center gap-2 mt-3"><span>🌱 Dica Rápida</span></button></div><div class="p-4 border-t mt-4"><button onclick="handleLogout()" class="text-red-400 text-sm font-bold hover:text-red-600 w-full text-center">Sair da Conta</button></div></div></div>`;
+            let html=`<div class="flex flex-col h-full bg-slate-50 w-full"><header class="bg-white p-4 shadow-sm flex items-center gap-3 border-b border-slate-100 sticky top-0 z-20"><button onclick="changeView('child')" class="p-2 hover:bg-slate-100 rounded-full text-slate-500 transition"><i class="fa-solid fa-arrow-left text-xl"></i></button><h1 class="text-xl font-bold text-slate-800">Área dos Pais</h1></header><div class="flex-1 overflow-y-auto p-5 space-y-8"><section class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200"><h2 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4 text-center">Gestão de Comportamento</h2><div class="flex items-center justify-between gap-4"><button onclick="manualAdjustStars(-1)" class="w-16 h-16 rounded-2xl bg-red-50 text-red-500 border border-red-100 flex items-center justify-center text-3xl shadow-sm active:scale-95 transition hover:bg-red-100"><i class="fa-solid fa-minus"></i></button><div class="flex flex-col items-center"><div class="text-5xl font-bold text-yellow-500 flex items-center gap-2">${state.stars} <i class="fa-solid fa-star text-3xl"></i></div><span class="text-xs text-slate-400 mt-1">Saldo Atual</span></div><button onclick="manualAdjustStars(1)" class="w-16 h-16 rounded-2xl bg-green-50 text-green-500 border border-green-100 flex items-center justify-center text-3xl shadow-sm active:scale-95 transition hover:bg-green-100"><i class="fa-solid fa-plus"></i></button></div></section><section><div class="p-4 bg-yellow-50 border border-yellow-200 rounded-xl flex flex-col gap-2"><h3 class="text-sm font-bold text-yellow-800 flex items-center gap-2"><i class="fa-solid fa-cloud-bolt"></i> Teste de Conexão</h3><p class="text-xs text-yellow-700">Se não estiver salvando em outros dispositivos, clique aqui para diagnosticar.</p><button onclick="testConnection()" class="bg-yellow-400 text-yellow-900 text-sm font-bold py-2 rounded-lg hover:bg-yellow-500 transition">Testar Conexão Nuvem</button></div></section><section><label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 ml-1">Criança</label><div class="bg-white p-2 rounded-xl shadow-sm border border-slate-200"><input type="text" value="${state.childName}" oninput="updateChildName(this.value)" placeholder="Nome da Criança" class="w-full bg-transparent p-2 outline-none text-slate-700 font-bold"></div></section><section><h2 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 ml-1">Tema</h2><div class="grid grid-cols-4 gap-2">${renderThemeButton('theme-blue', 'bg-blue-500')}${renderThemeButton('theme-green', 'bg-green-500')}${renderThemeButton('theme-purple', 'bg-purple-500')}${renderThemeButton('theme-dark', 'bg-slate-800')}</div></section><section><div class="flex justify-between items-end mb-3 ml-1"><h2 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Rotina Diária (Clique no olho para ocultar)</h2><button onclick="resetDay()" class="text-xs text-red-400 hover:text-red-600 font-medium">Resetar Dia</button></div><div class="bg-white rounded-2xl shadow-sm border border-slate-200 divide-y divide-slate-100">${state.routine.map(task => `<div class="p-4 flex items-center gap-3 hover:bg-slate-50 transition"><div class="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center text-slate-500 ${task.active === false ? 'opacity-30' : ''}"><i class="fa-solid ${task.icon}"></i></div><div class="flex-1 min-w-0 ${task.active === false ? 'opacity-50' : ''}"><div class="font-bold text-slate-700 truncate">${task.title}</div><div class="text-xs text-slate-400">${task.duration} min</div></div><button onclick="toggleTaskVisibility(${task.id})" class="p-2 ${task.active === false ? 'text-slate-300' : 'text-blue-500'} hover:bg-blue-50 rounded-lg mr-1"><i class="fa-solid ${task.active === false ? 'fa-eye-slash' : 'fa-eye'}"></i></button><button onclick="openTaskModal(${task.id})" class="p-2 text-blue-400 hover:bg-blue-50 rounded-lg"><i class="fa-solid fa-pen"></i></button></div>`).join('')}<button onclick="openTaskModal()" class="w-full p-4 text-center text-blue-500 font-bold hover:bg-blue-50 transition rounded-b-2xl"><i class="fa-solid fa-plus-circle"></i> Adicionar</button></div></section><section><div class="flex justify-between items-end mb-3 ml-1"><h2 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Loja de Recompensas</h2></div><div class="bg-white rounded-2xl shadow-sm border border-slate-200 divide-y divide-slate-100">${state.rewards.map(reward => `<div class="p-4 flex items-center gap-3 hover:bg-slate-50 transition"><div class="w-10 h-10 rounded-lg bg-yellow-50 flex items-center justify-center text-yellow-600"><i class="fa-solid ${reward.icon}"></i></div><div class="flex-1 min-w-0"><div class="font-bold text-slate-700 truncate">${reward.title}</div><div class="text-xs text-yellow-600 font-bold flex items-center gap-1"><span>${reward.cost} <i class="fa-solid fa-star text-[10px]"></i></span> <span class="ml-2 bg-yellow-100 px-1.5 rounded text-[10px]">${reward.duration}m</span></div></div><button onclick="openRewardModal(${reward.id})" class="p-2 text-blue-400 hover:bg-blue-50 rounded-lg"><i class="fa-solid fa-pen"></i></button></div>`).join('')}<button onclick="openRewardModal()" class="w-full p-4 text-center text-yellow-600 font-bold hover:bg-yellow-50 transition rounded-b-2xl"><i class="fa-solid fa-plus-circle"></i> Adicionar Prêmio</button></div></section><div class="p-4"><button onclick="openAIModal()" class="w-full py-3 rounded-xl font-bold bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg hover:opacity-90 transition flex items-center justify-center gap-2"><span>✨ Criar Rotina com IA</span></button><button onclick="openAdviceModal()" class="w-full py-3 rounded-xl font-bold bg-green-500 text-white shadow-lg hover:bg-green-600 transition flex items-center justify-center gap-2 mt-3"><span>🌱 Dica Rápida</span></button></div><div class="p-4 border-t mt-4"><button onclick="handleLogout()" class="text-red-400 text-sm font-bold hover:text-red-600 w-full text-center">Sair da Conta</button></div></div></div>`;
             mainContent.innerHTML=html;
         }
 
@@ -307,7 +332,7 @@
         
         function renderFeelingsCheckin() { 
             const feelings = [{id:'Feliz',icon:'fa-face-laugh-beam',color:'text-green-500',bg:'bg-green-100'},{id:'Tranquilo',icon:'fa-face-smile',color:'text-blue-500',bg:'bg-blue-100'},{id:'Cansado',icon:'fa-face-tired',color:'text-purple-500',bg:'bg-purple-100'},{id:'Bravo',icon:'fa-face-angry',color:'text-red-500',bg:'bg-red-100'},{id:'Triste',icon:'fa-face-sad-tear',color:'text-blue-300',bg:'bg-blue-50'}]; 
-            let html = `<div class="flex flex-col h-full bg-white p-6 relative"><button onclick="changeView('child')" class="absolute top-6 left-6 w-10 h-10 flex items-center justify-center bg-slate-100 rounded-full hover:bg-slate-200 transition"><i class="fa-solid fa-arrow-left text-slate-600"></i></button><div class="flex-1 flex flex-col items-center justify-center pt-10"><h2 class="text-2xl font-bold text-slate-700 mb-8 text-center">Como você está?</h2><div class="grid grid-cols-2 gap-4 w-full">${feelings.map(f => `<button onclick="selectFeeling('${f.id}')" class="p-4 rounded-2xl ${f.bg} flex flex-col items-center gap-3 transition transform hover:scale-105 active:scale-95"><i class="fa-solid ${f.icon} text-4xl ${f.color}"></i><span class="font-bold text-slate-700">${f.id}</span></button>`).join('')}</div></div></div>`; 
+            let html = `<div class="flex flex-col h-full bg-white p-6 relative w-full"><button onclick="changeView('child')" class="absolute top-6 left-6 w-10 h-10 flex items-center justify-center bg-slate-100 rounded-full hover:bg-slate-200 transition"><i class="fa-solid fa-arrow-left text-slate-600"></i></button><div class="flex-1 flex flex-col items-center justify-center pt-10"><h2 class="text-2xl font-bold text-slate-700 mb-8 text-center">Como você está?</h2><div class="grid grid-cols-2 gap-4 w-full">${feelings.map(f => `<button onclick="selectFeeling('${f.id}')" class="p-4 rounded-2xl ${f.bg} flex flex-col items-center gap-3 transition transform hover:scale-105 active:scale-95"><i class="fa-solid ${f.icon} text-4xl ${f.color}"></i><span class="font-bold text-slate-700">${f.id}</span></button>`).join('')}</div></div></div>`; 
             mainContent.innerHTML = html; 
         }
 
@@ -348,7 +373,6 @@
                 _isOffline = false;
                 state.view = 'child';
                 await loadFromSupabase();
-                // Setup Realtime after login
                 setupRealtime();
                 render();
             } catch(e) {
@@ -416,30 +440,78 @@
             state.view = 'login';
             render();
         }
+        
+        async function testConnection() {
+            if(_isOffline || !_user) return alert("Você está no modo Offline. Faça login para sincronizar.");
+            const btn = document.querySelector('button[onclick="testConnection()"]');
+            const originalText = btn.innerText;
+            btn.innerText = "Testando...";
+            btn.disabled = true;
+            try {
+                const { error } = await _supabase.from('user_data').upsert({ id: _user.id, content: state });
+                if(error) throw error;
+                alert("✅ Conexão bem sucedida! Seus dados estão salvos na nuvem.");
+                document.getElementById('status-indicator').innerHTML = '<i class="fa-solid fa-cloud text-green-400"></i> Online';
+            } catch(e) {
+                let msg = e.message;
+                if(e.code === '42P01') msg = "A tabela 'user_data' não existe no Supabase. Crie a tabela no SQL Editor.";
+                else if(e.code === '42501') msg = "Permissão negada (RLS). Verifique as políticas.";
+                alert("❌ Erro de Conexão: " + msg);
+            } finally {
+                btn.innerText = originalText;
+                btn.disabled = false;
+            }
+        }
+        
+        async function manualSyncRetry() {
+            if(_isOffline) {
+                if(confirm("Deseja tentar conectar novamente?")) location.reload();
+            } else {
+                testConnection();
+            }
+        }
+        
+        function forceSync() {
+            if(!_isOffline && _user) {
+                loadFromSupabase();
+                showErrorToast("Sincronizando...");
+            }
+        }
 
-        // --- REALTIME & SYNC ---
+        // --- REALTIME & POLLING ---
         let realtimeChannel = null;
+        let pollingInterval = null;
 
         function setupRealtime() {
             if (!_user) return;
             if (realtimeChannel) _supabase.removeChannel(realtimeChannel);
+            if (pollingInterval) clearInterval(pollingInterval);
 
+            // 1. Realtime Listener
             realtimeChannel = _supabase
                 .channel('public:user_data')
                 .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'user_data', filter: `id=eq.${_user.id}` }, payload => {
                     if (payload.new && payload.new.content) {
-                        // Compara se realmente mudou para evitar loop
                         if(JSON.stringify(state) !== JSON.stringify(payload.new.content)) {
-                            console.log('Atualização recebida de outro dispositivo!');
+                            console.log('Update recebido!');
                             state = { ...state, ...payload.new.content };
-                            // Renderiza sem salvar de volta (avoid loops)
                             render(false); 
+                            const ind = document.getElementById('status-indicator');
+                            if(ind) {
+                                ind.innerHTML = '<i class="fa-solid fa-bolt text-yellow-400 animate-pulse"></i> Atualizado!';
+                                setTimeout(() => ind.innerHTML = '<i class="fa-solid fa-cloud text-green-400"></i> Online', 2000);
+                            }
                         }
                     }
                 })
-                .subscribe((status) => {
-                    if(status === 'SUBSCRIBED') console.log('Sincronização em tempo real ativa!');
-                });
+                .subscribe();
+
+            // 2. Polling Fallback (30s)
+            pollingInterval = setInterval(async () => {
+                if(!document.hidden && _user && !_isOffline) {
+                   await loadFromSupabase();
+                }
+            }, 30000);
         }
 
         // --- LÓGICA DE TEMPO REAL E CONTROLE ---
@@ -613,13 +685,33 @@
 
         async function loadFromSupabase() {
             if (!_user || _isOffline) return;
-            const { data } = await _supabase.from('user_data').select('content').eq('id', _user.id).single();
-            if (data && data.content) { state = { ...state, ...data.content }; if (!state.rewards) state.rewards = DEFAULT_REWARDS; } else saveToSupabaseNow();
+            // CHECK TABLE
+            try {
+                const { data, error } = await _supabase.from('user_data').select('content').eq('id', _user.id).single();
+                
+                // Se tabela não existe ou usuário novo (PGRST116), tenta salvar
+                if(error && (error.code === 'PGRST116' || error.code === '42P01')) {
+                     console.log("Novo usuário ou tabela não existe, salvando inicial...");
+                     saveToSupabaseNow();
+                     return;
+                }
+                
+                if(error) throw error;
+
+                if (data && data.content) {
+                    // Mescla o estado da nuvem com o local, priorizando a nuvem mas mantendo estrutura
+                    // Se o local for mais recente (por timestamp), deveria ganhar, mas aqui simplificamos: nuvem ganha no load.
+                    state = { ...state, ...data.content }; 
+                    if (!state.rewards) state.rewards = DEFAULT_REWARDS; 
+                } 
+            } catch(e) {
+                console.error("Erro load:", e);
+            }
         }
 
         let saveTimeout;
         function saveData() {
-            localStorage.setItem('minhaRotinaData_v12.0_estrelinha', JSON.stringify(state));
+            localStorage.setItem('minhaRotinaData_v12.3_estrelinha', JSON.stringify(state));
             if (_isOffline || !_user) {
                 const indicator = document.getElementById('status-indicator');
                 if(indicator) indicator.innerHTML = '<i class="fa-solid fa-laptop text-slate-500"></i> Salvo no PC';
@@ -634,7 +726,12 @@
         async function saveToSupabaseNow() {
             if (!_user || _isOffline) return;
             const dataToSave = { view: state.view, theme: state.theme, childName: state.childName, stars: state.stars, soundEnabled: state.soundEnabled, currentFeeling: state.currentFeeling, routine: state.routine, rewards: state.rewards };
-            await _supabase.from('user_data').upsert({ id: _user.id, content: dataToSave });
+            const { error } = await _supabase.from('user_data').upsert({ id: _user.id, content: dataToSave });
+            if (error) {
+                console.error("Erro ao salvar:", error);
+                const ind = document.getElementById('status-indicator');
+                if(ind) ind.innerHTML = '<i class="fa-solid fa-triangle-exclamation text-yellow-500"></i> Erro Sync (Clique)';
+            }
         }
 
         window.onload = initApp;
