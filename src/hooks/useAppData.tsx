@@ -93,7 +93,8 @@ export function useAppData() {
           soundEnabled: data.sound_enabled ?? true,
           currentFeeling: data.current_feeling,
           routine: data.routine || DEFAULT_ROUTINE,
-          rewards: data.rewards || DEFAULT_REWARDS
+          rewards: data.rewards || DEFAULT_REWARDS,
+          history: data.history || []
         });
       }
     } catch (err) {
@@ -123,6 +124,7 @@ export function useAppData() {
           current_feeling: newState.currentFeeling,
           routine: newState.routine,
           rewards: newState.rewards,
+          history: newState.history,
           updated_at: new Date().toISOString()
         }, { onConflict: 'user_id' });
 
