@@ -7,6 +7,48 @@ interface Props {
   onClearFeeling: () => void;
 }
 
+const THEME_STYLES: Record<string, {
+  accent: string;
+  border: string;
+  iconBg: string;
+  iconText: string;
+  playBtn: string;
+  playIcon: string;
+}> = {
+  'theme-blue': {
+    accent: 'blue',
+    border: 'border-blue-500',
+    iconBg: 'bg-blue-100',
+    iconText: 'text-blue-500',
+    playBtn: 'bg-blue-100',
+    playIcon: 'text-blue-500'
+  },
+  'theme-green': {
+    accent: 'green',
+    border: 'border-green-500',
+    iconBg: 'bg-green-100',
+    iconText: 'text-green-600',
+    playBtn: 'bg-green-100',
+    playIcon: 'text-green-600'
+  },
+  'theme-purple': {
+    accent: 'purple',
+    border: 'border-purple-500',
+    iconBg: 'bg-purple-100',
+    iconText: 'text-purple-600',
+    playBtn: 'bg-purple-100',
+    playIcon: 'text-purple-600'
+  },
+  'theme-dark': {
+    accent: 'slate',
+    border: 'border-slate-800',
+    iconBg: 'bg-slate-200',
+    iconText: 'text-slate-800',
+    playBtn: 'bg-slate-800',
+    playIcon: 'text-white'
+  }
+};
+
 const FEELING_EMOJI: Record<string, string> = {
   'Feliz': '😄',
   'Tranquilo': '🙂',
@@ -22,6 +64,7 @@ function formatDuration(m: number): string {
 export default function ChildDashboard({ state, onStartTask, onChangeView, onClearFeeling }: Props) {
   const greeting = state.childName ? `Olá, ${state.childName}!` : 'Estrelinha';
   const visibleTasks = state.routine.filter(t => t.visible_to_child);
+  const theme = THEME_STYLES[state.theme] || THEME_STYLES['theme-blue'];
 
   return (
     <>
@@ -81,16 +124,14 @@ export default function ChildDashboard({ state, onStartTask, onChangeView, onCle
             <div
               key={task.id}
               onClick={() => !task.completed && onStartTask(task.id)}
-              className={`relative p-4 rounded-3xl flex items-center gap-5 transition-all transform duration-300 ${
-                task.completed
-                  ? 'bg-slate-100 opacity-60 grayscale cursor-default'
-                  : 'bg-white shadow-md hover:scale-[1.02] hover:shadow-lg cursor-pointer border-l-8 border-blue-500'
-              }`}
+              className={`relative p-4 rounded-3xl flex items-center gap-5 transition-all transform duration-300 ${task.completed
+                ? 'bg-slate-100 opacity-60 grayscale cursor-default'
+                : `bg-white shadow-md hover:scale-[1.02] hover:shadow-lg cursor-pointer border-l-8 ${theme.border}`
+                }`}
             >
               <div
-                className={`w-16 h-16 rounded-2xl flex items-center justify-center text-3xl shrink-0 ${
-                  task.completed ? 'bg-slate-200 text-slate-400' : 'bg-blue-100 text-blue-500'
-                }`}
+                className={`w-16 h-16 rounded-2xl flex items-center justify-center text-3xl shrink-0 ${task.completed ? 'bg-slate-200 text-slate-400' : `${theme.iconBg} ${theme.iconText}`
+                  }`}
               >
                 <i className={`fa-solid ${task.icon}`}></i>
               </div>
@@ -105,7 +146,7 @@ export default function ChildDashboard({ state, onStartTask, onChangeView, onCle
               {task.completed ? (
                 <i className="fa-solid fa-circle-check text-green-500 text-3xl"></i>
               ) : (
-                <div className="bg-blue-100 w-10 h-10 rounded-full flex items-center justify-center text-blue-500">
+                <div className={`${theme.playBtn} w-10 h-10 rounded-full flex items-center justify-center ${theme.playIcon}`}>
                   <i className="fa-solid fa-play ml-1"></i>
                 </div>
               )}
